@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beast Clicker: Wild Epoch</title>
+  <style>
+    :root {
+      --bg: #0a1020;
+      --panel: #111b34;
+      --line: #24314e;
+      --text: #e5edff;
+      --muted: #98abcc;
+      --accent: #7dd3fc;
+      --buy: #fbbf24;
+      --good: #6ee7b7;
+      --warn: #fca5a5;
+      --rare: #c084fc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #172554 0%, var(--bg) 45%);
+      padding: 1rem;
+    }
+    .layout {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 1rem;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.9rem;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+    }
+    h1, h2, h3 { margin: 0.3rem 0 0.7rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0b1430;
+      padding: 0.45rem;
+    }
+    .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .value { font-weight: 700; font-size: 1.15rem; }
+    #beastButton {
+      width: 100%;
+      min-height: 210px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #08152b;
+      cursor: pointer;
+      background: linear-gradient(155deg, #22d3ee, #38bdf8 55%, #818cf8);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    #beastButton:active { transform: scale(0.99); }
+    .beast-emoji { font-size: 3.4rem; display: block; }
+    .beast-name { font-size: 1rem; display: block; margin-top: 0.25rem; }
+    .popup {
+      position: absolute;
+      font-weight: 800;
+      pointer-events: none;
+      color: var(--good);
+      animation: pop 750ms ease forwards;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    @keyframes pop {
+      from { transform: translateY(0) scale(0.95); opacity: 1; }
+      to { transform: translateY(-34px) scale(1.06); opacity: 0; }
+    }
+    .event-banner {
+      margin-top: 0.7rem;
+      padding: 0.6rem;
+      border-radius: 10px;
+      border: 1px dashed var(--rare);
+      background: #21113f;
+    }
+    .row { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      background: #0d1837;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .shop {
+      max-height: 430px;
+      overflow: auto;
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.5rem;
+    }
+    .item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.55rem;
+      background: #0b1430;
+    }
+    .buy, .secondary {
+      border: none;
+      border-radius: 9px;
+      padding: 0.45rem 0.65rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .buy { background: linear-gradient(155deg, var(--buy), #f97316); color: #1f2937; }
+    .buy:disabled { opacity: 0.45; cursor: not-allowed; }
+    .secondary { background: #243b6b; color: var(--text); border: 1px solid #375087; }
+    .grid2 {
+      margin-top: 0.7rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+    input {
+      width: 100%;
+      border: 1px solid #3b4f7c;
+      background: #0b1430;
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.48rem;
+    }
+    .small { color: var(--muted); font-size: 0.82rem; }
+    .collection {
+      margin-top: 0.5rem;
+      max-height: 230px;
+      overflow: auto;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.35rem;
+    }
+    .beast-chip {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.35rem;
+      font-size: 0.8rem;
+      background: #0b1430;
+    }
+    .locked { filter: grayscale(1); opacity: 0.55; }
+    .lab-box { margin-top: 0.6rem; border: 1px solid #4b2c73; background: #1d1134; border-radius: 10px; padding: 0.55rem; }
+    .log {
+      margin-top: 0.5rem;
+      max-height: 110px;
+      overflow: auto;
+      padding: 0.4rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0b1430;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .update-panel {
+      margin-top: 0.7rem;
+      border: 1px solid #365a8d;
+      background: #10203f;
+      border-radius: 10px;
+      padding: 0.6rem;
+    }
+    .hidden { display: none !important; }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 7, 18, 0.72);
+      display: grid;
+      place-items: center;
+      z-index: 20;
+      padding: 1rem;
+    }
+    .modal {
+      width: min(900px, 100%);
+      max-height: 85vh;
+      overflow: auto;
+      background: #0c1731;
+      border: 1px solid #395487;
+      border-radius: 12px;
+      padding: 0.8rem;
+    }
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+    .admin-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.55rem;
+      background: #101d3e;
+    }
+    @media (max-width: 980px) {
+      .admin-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .collection { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="panel">
+      <h1>🐾 Beast Clicker: Wild Epoch</h1>
+      <div class="stats">
+        <div class="stat"><div class="label">Beast Clicks</div><div class="value" id="bites">0</div></div>
+        <div class="stat"><div class="label">Per Sec</div><div class="value" id="bps">0</div></div>
+        <div class="stat"><div class="label">Per Click</div><div class="value" id="perClick">1</div></div>
+        <div class="stat"><div class="label">Achievements</div><div class="value" id="achievementCount">0</div></div>
+      </div>
+
+      <button id="beastButton">
+        <span class="beast-emoji" id="activeBeastEmoji">🐉</span>
+        <span>Tap to harvest beast clicks</span>
+        <span class="beast-name" id="activeBeastName">Ancient Drake</span>
+      </button>
+
+      <div class="event-banner" id="eventBanner">
+        <strong>Rare event:</strong> <span id="eventText">No active event right now.</span>
+        <div class="row" style="margin-top:0.45rem;">
+          <button class="secondary" id="eventActionBtn" disabled>Event action</button>
+          <span class="pill" id="eventTimer">--</span>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel" style="padding:0.6rem; margin:0;">
+          <h3>🎟️ Redeem Codes</h3>
+          <div class="row">
+            <input id="codeInput" placeholder="Enter code (e.g. WILDSTART)" />
+            <button class="secondary" id="redeemBtn">Redeem</button>
+          </div>
+          <p class="small" id="codeMsg">Codes can grant clicks, beasts, or lab boosts.</p>
+        </div>
+        <div class="panel" style="padding:0.6rem; margin:0;">
+          <h3>🧪 Experiment Lab</h3>
+          <p class="small">Spend 2,500 clicks for a risky experiment. You might discover a rare beast or achievement.</p>
+          <button class="secondary" id="labBtn">Run Experiment (2.5K)</button>
+          <p class="small" id="labMsg">No experiment yet.</p>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:0.6rem;">
+        <span class="pill">Next update: <strong id="updateCountdown">10d 00h 00m</strong></span>
+        <button class="secondary" id="claimUpdateBtn" disabled>Unlock Day-10 Update</button>
+        <button class="secondary" id="resetBtn">Reset Save</button>
+      </div>
+
+      <div class="update-panel hidden" id="updatePanel">
+        <h3>🚀 Day-10 Update: Eclipse Frontier</h3>
+        <p class="small">New systems unlocked: Ascension, Mutation Research, and Alpha Boss Hunts.</p>
+        <div class="row">
+          <span class="pill">Ascensions: <strong id="ascensionsCount">0</strong></span>
+          <span class="pill">Mutation Level: <strong id="mutationLevel">0</strong></span>
+          <span class="pill">Boss Wins: <strong id="bossWins">0</strong></span>
+        </div>
+        <div class="row" style="margin-top:0.45rem;">
+          <button class="secondary" id="ascendBtn">Ascend (1M clicks)</button>
+          <button class="secondary" id="mutateBtn">Research Mutation</button>
+          <button class="secondary" id="bossBtn">Hunt Alpha Boss</button>
+        </div>
+        <p class="small" id="updateMsg">Reach the update timer to unlock this content.</p>
+      </div>
+
+      <div class="log" id="log"></div>
+    </section>
+
+    <section class="panel">
+      <h2>🛒 Mega Shop (30+ upgrades)</h2>
+      <p class="small">Build your beast empire with hunters, shrines, relics, automation, and arcane tech.</p>
+      <div class="shop" id="shop"></div>
+
+      <h3 style="margin-top:0.8rem;">📚 Beast Codex (120 beasts)</h3>
+      <p class="small">Unlocked beasts can appear as your active click beast and grant flavor prestige.</p>
+      <div class="collection" id="collection"></div>
+    </section>
+  </main>
+
+
+
+  <div class="overlay hidden" id="adminCodeOverlay">
+    <div class="modal">
+      <h3>🔐 Admin Code Access</h3>
+      <p class="small">Press Ctrl+Shift+A anytime to open this box.</p>
+      <div class="row">
+        <input id="adminCodeInput" placeholder="Enter admin code" />
+        <button class="secondary" id="adminCodeSubmit">Unlock</button>
+        <button class="secondary" id="adminCodeCancel">Close</button>
+      </div>
+      <p class="small" id="adminCodeMsg">Admin tools are hidden until unlocked.</p>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="adminPanelOverlay">
+    <div class="modal">
+      <div class="row" style="justify-content:space-between;">
+        <h3>🛠️ Massive Admin Panel</h3>
+        <button class="secondary" id="adminPanelClose">Close Panel</button>
+      </div>
+      <p class="small">Use carefully. These controls directly modify progression.</p>
+
+      <div class="admin-grid">
+        <section class="admin-card">
+          <h4>Economy</h4>
+          <div class="row">
+            <button class="secondary" id="adminAdd1k">+1K</button>
+            <button class="secondary" id="adminAdd1m">+1M</button>
+            <button class="secondary" id="adminAdd1b">+1B</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <input id="adminCustomClicks" placeholder="Custom clicks amount" />
+            <button class="secondary" id="adminGiveCustom">Give</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <h4>Progression</h4>
+          <div class="row">
+            <button class="secondary" id="adminUnlockAllBeasts">Unlock All Beasts</button>
+            <button class="secondary" id="adminUnlockUpdate">Unlock Day-10</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <button class="secondary" id="adminMaxBaseShop">Buy 25 each (base)</button>
+            <button class="secondary" id="adminMaxUpdateShop">Buy 10 each (update)</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <h4>Systems</h4>
+          <div class="row">
+            <button class="secondary" id="adminForceEvent">Force Rare Event</button>
+            <button class="secondary" id="adminLabSuccess">Guaranteed Lab Success</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <button class="secondary" id="adminBossWin">Force Boss Win</button>
+            <button class="secondary" id="adminAchievementsAll">Unlock Achievements</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <h4>Toggles</h4>
+          <div class="row">
+            <button class="secondary" id="adminToggleGodClick">God Click: OFF</button>
+            <button class="secondary" id="adminToggleGodBps">God BPS: OFF</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <button class="secondary" id="adminTogglePanelHotkey">Hotkey Enabled</button>
+            <button class="secondary" id="adminWipeCodes">Clear Used Codes</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="log" id="adminLog" style="margin-top:0.7rem;"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "beast_clicker_save_v4";
+    const UPDATE_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
+    const ADMIN_CODE = "BEAST-ROOT-ALPHA";
+
+    const beasts = Array.from({ length: 120 }, (_, i) => {
+      const icons = ["🐉", "🦁", "🐺", "🦂", "🕷️", "🦅", "🐍", "🦇", "🦖", "🦈", "🦬", "🦌"];
+      const icon = icons[i % icons.length];
+      const tier = i >= 100 ? "Mythic" : i >= 70 ? "Epic" : i >= 35 ? "Rare" : "Common";
+      return { id: `beast_${i + 1}`, name: `${tier} Beast #${i + 1}`, icon, rarity: tier };
+    });
+
+    const achievements = [
+      { id: "ach_first_click", name: "First Blood", check: (s) => s.totalClicks >= 1 },
+      { id: "ach_1k", name: "Thousand Fangs", check: (s) => s.bites >= 1000 },
+      { id: "ach_100k", name: "Savage Economy", check: (s) => s.bites >= 100000 },
+      { id: "ach_20beasts", name: "Beast Binder", check: (s) => s.unlockedBeasts.length >= 20 },
+      { id: "ach_100beasts", name: "Wild Curator", check: (s) => s.unlockedBeasts.length >= 100 },
+      { id: "ach_lab5", name: "Mad Scientist", check: (s) => s.labAttempts >= 5 },
+    ];
+
+    const shopItems = [
+      ["fangling", "🧸", "Fangling", 25, 0.2], ["scout", "🐺", "Pack Scout", 90, 1], ["warden", "🛡️", "Den Warden", 240, 2.8],
+      ["ravager", "🦁", "Savage Ravager", 650, 6], ["manticore", "🦂", "Manticore", 1300, 12], ["chimera", "🐲", "Chimera", 3000, 28],
+      ["drake", "🐉", "Sky Drake", 7000, 62], ["hydra", "🐍", "Hydra", 15000, 140], ["behemoth", "🦣", "Behemoth", 35000, 300],
+      ["titan", "🗿", "Titan Beast", 80000, 640], ["voidhound", "👁️", "Void Hound", 160000, 1300], ["moonfang", "🌙", "Moon Fang", 350000, 2800],
+      ["sunrex", "☀️", "Sun Rex", 800000, 6000], ["stormwyrm", "🌩️", "Storm Wyrm", 1700000, 12800], ["riftking", "🌀", "Rift King", 3600000, 27000],
+      ["totem", "🪵", "Tribal Totem", 120, 0.6], ["altar", "🕯️", "Feeding Altar", 520, 3.5], ["shrine", "⛩️", "Beast Shrine", 2100, 14],
+      ["temple", "🏛️", "Temple of Claws", 9000, 70], ["monolith", "🗿", "Monolith", 55000, 450], ["relay", "📡", "Howl Relay", 250000, 1900],
+      ["drone", "🤖", "Hunt Drone", 900000, 7000], ["reactor", "⚛️", "Feral Reactor", 4200000, 32000],
+      ["claw1", "🦴", "Bone Grip", 75, null, 1], ["claw2", "⚔️", "Titan Claws", 500, null, 4], ["claw3", "🔥", "Inferno Talons", 4000, null, 18],
+      ["claw4", "💎", "Crystal Talons", 25000, null, 70], ["claw5", "☄️", "Comet Strike", 180000, null, 260],
+      ["luck", "🍀", "Hunter's Luck", 1100, null, 0, 0.005], ["chrono", "⏳", "Chrono Cage", 12000, null, 0, 0.01], ["oracle", "🔮", "Oracle Sigil", 85000, null, 0, 0.02],
+      ["labpack", "🧪", "Lab Pack", 64000, null, 0, 0, 0.07]
+    ].map(([id, icon, name, baseCost, bps = 0, clickBoost = 0, rareBoost = 0, labBoost = 0]) => ({ id, icon, name, baseCost, bps, clickBoost, rareBoost, labBoost }));
+
+    const updateShopItems = [
+      ["eclipseCore", "🌘", "Eclipse Core", 5500000, 55000],
+      ["apexGate", "🜂", "Apex Gate", 14000000, 140000],
+      ["voidNest", "🕳️", "Void Nest", 36000000, 360000],
+      ["novaClaw", "🌟", "Nova Claw", 8500000, null, 900],
+      ["mutaTotem", "🧬", "Mutagen Totem", 12000000, null, 0, 0.03],
+    ].map(([id, icon, name, baseCost, bps = 0, clickBoost = 0, rareBoost = 0]) => ({ id, icon, name, baseCost, bps, clickBoost, rareBoost, isUpdate: true }));
+
+    const codeBook = {
+      WILDSTART: { clicks: 2500, msg: "+2,500 clicks" },
+      BEASTFEST: { clicks: 12000, unlockRandom: 3, msg: "+12,000 clicks and 3 random beasts" },
+      LABLUCK: { labLuck: 0.15, msg: "+15% temporary lab success this session" },
+      DAYTENHYPE: { clicks: 50000, unlockBeastId: "beast_120", msg: "Huge grant + Mythic Beast #120" },
+    };
+
+    const defaultState = {
+      bites: 0,
+      totalClicks: 0,
+      perClick: 1,
+      items: {},
+      unlockedBeasts: ["beast_1"],
+      activeBeastId: "beast_1",
+      achievements: [],
+      labAttempts: 0,
+      labLuckBonus: 0,
+      codeUsed: [],
+      event: null,
+      lastRareEventAt: 0,
+      logs: ["Welcome to Wild Epoch."],
+      updateReleaseAt: Date.now() + UPDATE_WINDOW_MS,
+      updateUnlocked: false,
+      ascensions: 0,
+      mutationLevel: 0,
+      bossWins: 0,
+      bossCooldownUntil: 0,
+      adminUnlocked: false,
+      adminGodClick: false,
+      adminGodBps: false,
+      adminHotkeyEnabled: true,
+      adminGuaranteedLab: false,
+    };
+
+    let state = load();
+
+    const bitesEl = document.getElementById("bites");
+    const bpsEl = document.getElementById("bps");
+    const perClickEl = document.getElementById("perClick");
+    const achievementCountEl = document.getElementById("achievementCount");
+    const beastButton = document.getElementById("beastButton");
+    const activeBeastEmojiEl = document.getElementById("activeBeastEmoji");
+    const activeBeastNameEl = document.getElementById("activeBeastName");
+    const shopEl = document.getElementById("shop");
+    const collectionEl = document.getElementById("collection");
+    const eventTextEl = document.getElementById("eventText");
+    const eventActionBtn = document.getElementById("eventActionBtn");
+    const eventTimerEl = document.getElementById("eventTimer");
+    const codeInput = document.getElementById("codeInput");
+    const codeMsg = document.getElementById("codeMsg");
+    const redeemBtn = document.getElementById("redeemBtn");
+    const labBtn = document.getElementById("labBtn");
+    const labMsg = document.getElementById("labMsg");
+    const resetBtn = document.getElementById("resetBtn");
+    const updateCountdownEl = document.getElementById("updateCountdown");
+    const claimUpdateBtn = document.getElementById("claimUpdateBtn");
+    const updatePanel = document.getElementById("updatePanel");
+    const ascendBtn = document.getElementById("ascendBtn");
+    const mutateBtn = document.getElementById("mutateBtn");
+    const bossBtn = document.getElementById("bossBtn");
+    const updateMsg = document.getElementById("updateMsg");
+    const ascensionsCountEl = document.getElementById("ascensionsCount");
+    const mutationLevelEl = document.getElementById("mutationLevel");
+    const bossWinsEl = document.getElementById("bossWins");
+    const logEl = document.getElementById("log");
+    const adminCodeOverlay = document.getElementById("adminCodeOverlay");
+    const adminCodeInput = document.getElementById("adminCodeInput");
+    const adminCodeSubmit = document.getElementById("adminCodeSubmit");
+    const adminCodeCancel = document.getElementById("adminCodeCancel");
+    const adminCodeMsg = document.getElementById("adminCodeMsg");
+    const adminPanelOverlay = document.getElementById("adminPanelOverlay");
+    const adminPanelClose = document.getElementById("adminPanelClose");
+    const adminLogEl = document.getElementById("adminLog");
+    const adminAdd1k = document.getElementById("adminAdd1k");
+    const adminAdd1m = document.getElementById("adminAdd1m");
+    const adminAdd1b = document.getElementById("adminAdd1b");
+    const adminCustomClicks = document.getElementById("adminCustomClicks");
+    const adminGiveCustom = document.getElementById("adminGiveCustom");
+    const adminUnlockAllBeasts = document.getElementById("adminUnlockAllBeasts");
+    const adminUnlockUpdate = document.getElementById("adminUnlockUpdate");
+    const adminMaxBaseShop = document.getElementById("adminMaxBaseShop");
+    const adminMaxUpdateShop = document.getElementById("adminMaxUpdateShop");
+    const adminForceEvent = document.getElementById("adminForceEvent");
+    const adminLabSuccess = document.getElementById("adminLabSuccess");
+    const adminBossWin = document.getElementById("adminBossWin");
+    const adminAchievementsAll = document.getElementById("adminAchievementsAll");
+    const adminToggleGodClick = document.getElementById("adminToggleGodClick");
+    const adminToggleGodBps = document.getElementById("adminToggleGodBps");
+    const adminTogglePanelHotkey = document.getElementById("adminTogglePanelHotkey");
+    const adminWipeCodes = document.getElementById("adminWipeCodes");
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultState),
+          ...parsed,
+          items: { ...defaultState.items, ...(parsed.items || {}) },
+          logs: Array.isArray(parsed.logs) ? parsed.logs.slice(-50) : defaultState.logs,
+          updateReleaseAt: parsed.updateReleaseAt || Date.now() + UPDATE_WINDOW_MS,
+        };
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    function format(n) {
+      if (n < 1000) return Number(n.toFixed(1)).toString();
+      const u = ["K", "M", "B", "T", "Qa", "Qi"];
+      let i = -1, v = n;
+      while (v >= 1000 && i < u.length - 1) { v /= 1000; i++; }
+      return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)}${u[i]}`;
+    }
+
+    function itemCount(id) { return state.items[id] || 0; }
+    function currentCost(item) { return Math.floor(item.baseCost * Math.pow(1.15, itemCount(item.id))); }
+    function allShopItems() {
+      return state.updateUnlocked ? [...shopItems, ...updateShopItems] : shopItems;
+    }
+    function totalBps() { return allShopItems().reduce((sum, i) => sum + (i.bps ? i.bps * itemCount(i.id) : 0), 0); }
+    function rareChance() {
+      return 0.004 + allShopItems().reduce((sum, i) => sum + (i.rareBoost || 0) * itemCount(i.id), 0);
+    }
+    function labChance() {
+      return 0.16 + state.labLuckBonus + shopItems.reduce((sum, i) => sum + (i.labBoost || 0) * itemCount(i.id), 0);
+    }
+
+    function pushLog(text) {
+      state.logs.push(`[${new Date().toLocaleTimeString()}] ${text}`);
+      state.logs = state.logs.slice(-40);
+    }
+
+    function pushAdminLog(text) {
+      if (!window.__adminLogs) window.__adminLogs = [];
+      window.__adminLogs.push(`[${new Date().toLocaleTimeString()}] ${text}`);
+      window.__adminLogs = window.__adminLogs.slice(-20);
+      if (adminLogEl) adminLogEl.innerHTML = window.__adminLogs.map((x) => `<div>${x}</div>`).join('');
+      pushLog(`[ADMIN] ${text}`);
+    }
+
+    function isAdminOpen() {
+      return !adminPanelOverlay.classList.contains('hidden');
+    }
+
+    function unlockBeast(id) {
+      if (!state.unlockedBeasts.includes(id)) {
+        state.unlockedBeasts.push(id);
+        pushLog(`Unlocked ${beasts.find(b => b.id === id)?.name || id}.`);
+      }
+    }
+
+    function unlockRandomBeast(preferRare = false) {
+      const locked = beasts.filter(b => !state.unlockedBeasts.includes(b.id));
+      if (!locked.length) return null;
+      let pool = locked;
+      if (preferRare) {
+        const rarePool = locked.filter(b => b.rarity !== "Common");
+        if (rarePool.length) pool = rarePool;
+      }
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      unlockBeast(pick.id);
+      return pick;
+    }
+
+    function recomputeAchievements() {
+      for (const a of achievements) {
+        if (!state.achievements.includes(a.id) && a.check(state)) {
+          state.achievements.push(a.id);
+          pushLog(`Achievement unlocked: ${a.name}`);
+        }
+      }
+    }
+
+    function maybeRotateActiveBeast() {
+      if (!state.unlockedBeasts.length) return;
+      if (Math.random() < 0.12) {
+        state.activeBeastId = state.unlockedBeasts[Math.floor(Math.random() * state.unlockedBeasts.length)];
+      }
+    }
+
+    function renderShop() {
+      shopEl.innerHTML = "";
+      for (const item of allShopItems()) {
+        const count = itemCount(item.id);
+        const cost = currentCost(item);
+        const can = state.bites >= cost;
+        const desc = item.bps ? `${item.bps}/sec each` : item.clickBoost ? `+${item.clickBoost} click power` : "Special utility";
+        const bonus = [item.rareBoost ? `+${(item.rareBoost * 100).toFixed(1)}% rare` : "", item.labBoost ? `+${(item.labBoost * 100).toFixed(1)}% lab` : ""].filter(Boolean).join(" • ");
+
+        const row = document.createElement("article");
+        row.className = "item";
+        row.innerHTML = `
+          <div>${item.icon}</div>
+          <div>
+            <div><strong>${item.name}</strong></div>
+            <div class="small">${desc} • Owned: ${count}${bonus ? ` • ${bonus}` : ""}${item.isUpdate ? " • Day-10" : ""}</div>
+          </div>
+          <button class="buy" data-id="${item.id}" ${can ? "" : "disabled"}>Buy ${format(cost)}</button>
+        `;
+        shopEl.appendChild(row);
+      }
+    }
+
+    function renderCollection() {
+      const unlocked = new Set(state.unlockedBeasts);
+      collectionEl.innerHTML = "";
+      beasts.forEach((b) => {
+        const d = document.createElement("div");
+        const has = unlocked.has(b.id);
+        d.className = `beast-chip ${has ? "" : "locked"}`;
+        d.innerHTML = `${b.icon} ${has ? b.name : "Locked Beast"}`;
+        collectionEl.appendChild(d);
+      });
+    }
+
+    function renderEvent() {
+      const e = state.event;
+      if (!e) {
+        eventTextEl.textContent = "No active event right now.";
+        eventActionBtn.disabled = true;
+        eventTimerEl.textContent = "--";
+        return;
+      }
+      const left = Math.max(0, e.endsAt - Date.now());
+      if (left <= 0) {
+        state.event = null;
+        renderEvent();
+        return;
+      }
+      eventTextEl.textContent = `${e.name}: ${e.desc}`;
+      eventTimerEl.textContent = `${Math.ceil(left / 1000)}s`;
+      eventActionBtn.disabled = false;
+      eventActionBtn.textContent = e.actionText;
+    }
+
+    function renderCountdown() {
+      const left = Math.max(0, state.updateReleaseAt - Date.now());
+      const d = Math.floor(left / 86400000);
+      const h = Math.floor((left % 86400000) / 3600000);
+      const m = Math.floor((left % 3600000) / 60000);
+      const released = left <= 0;
+      updateCountdownEl.textContent = released ? "LIVE NOW" : `${d}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+      claimUpdateBtn.disabled = !released || state.updateUnlocked;
+      claimUpdateBtn.textContent = state.updateUnlocked ? "Update Unlocked" : "Unlock Day-10 Update";
+      updatePanel.classList.toggle("hidden", !state.updateUnlocked);
+    }
+
+    function renderCore() {
+      bitesEl.textContent = format(state.bites);
+      bpsEl.textContent = format(totalBps());
+      perClickEl.textContent = format(state.perClick);
+      achievementCountEl.textContent = state.achievements.length;
+      const active = beasts.find((b) => b.id === state.activeBeastId) || beasts[0];
+      activeBeastEmojiEl.textContent = active.icon;
+      activeBeastNameEl.textContent = active.name;
+      ascensionsCountEl.textContent = state.ascensions;
+      mutationLevelEl.textContent = state.mutationLevel;
+      bossWinsEl.textContent = state.bossWins;
+      logEl.innerHTML = state.logs.slice(-12).map((t) => `<div>${t}</div>`).join("");
+      adminToggleGodClick.textContent = `God Click: ${state.adminGodClick ? 'ON' : 'OFF'}`;
+      adminToggleGodBps.textContent = `God BPS: ${state.adminGodBps ? 'ON' : 'OFF'}`;
+      adminTogglePanelHotkey.textContent = state.adminHotkeyEnabled ? 'Hotkey Enabled' : 'Hotkey Disabled';
+      renderEvent();
+      renderCountdown();
+    }
+
+    function renderAll() {
+      renderCore();
+      renderShop();
+      renderCollection();
+    }
+
+    function gain(v) {
+      state.bites += v;
+      if (state.bites < 0) state.bites = 0;
+    }
+
+    function clickBeast(ev) {
+      const clickPower = state.adminGodClick ? state.perClick * 10 : state.perClick;
+      gain(clickPower);
+      state.totalClicks += 1;
+
+      if (Math.random() < rareChance()) {
+        const found = unlockRandomBeast(Math.random() < 0.6);
+        if (found) pushLog(`Rare discovery! ${found.name} joined your codex.`);
+      }
+
+      maybeRotateActiveBeast();
+      recomputeAchievements();
+
+      const pop = document.createElement("span");
+      pop.className = "popup";
+      pop.textContent = `+${format(clickPower)}`;
+      const rect = beastButton.getBoundingClientRect();
+      pop.style.left = `${(ev?.clientX ?? rect.left + rect.width / 2) - rect.left}px`;
+      pop.style.top = `${(ev?.clientY ?? rect.top + rect.height / 2) - rect.top}px`;
+      beastButton.appendChild(pop);
+      setTimeout(() => pop.remove(), 730);
+
+      renderCore();
+    }
+
+    beastButton.addEventListener("click", clickBeast);
+
+    shopEl.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("button.buy");
+      if (!btn) return;
+      const item = allShopItems().find((s) => s.id === btn.dataset.id);
+      if (!item) return;
+      const cost = currentCost(item);
+      if (state.bites < cost) return;
+      gain(-cost);
+      state.items[item.id] = itemCount(item.id) + 1;
+      if (item.clickBoost) state.perClick += item.clickBoost;
+      recomputeAchievements();
+      renderAll();
+    });
+
+    const eventTemplates = [
+      {
+        name: "Blood Moon Hunt",
+        desc: "Tap event action for a burst and possible rare beast.",
+        duration: 25,
+        actionText: "Howl at moon",
+        apply: () => {
+          gain(500 + totalBps() * 12);
+          if (Math.random() < 0.5) unlockRandomBeast(true);
+          pushLog("Blood Moon rewards claimed.");
+        }
+      },
+      {
+        name: "Meteor Stampede",
+        desc: "Catch meteors to gain chunks of clicks.",
+        duration: 20,
+        actionText: "Catch meteor",
+        apply: () => {
+          gain(1200 + Math.random() * 4000);
+          pushLog("Meteor fragments converted into clicks.");
+        }
+      },
+      {
+        name: "Ancient Roar Echo",
+        desc: "Channel roar for temporary click power.",
+        duration: 18,
+        actionText: "Channel roar",
+        apply: () => {
+          state.perClick += 5;
+          pushLog("Roar resonance: +5 click power.");
+        }
+      }
+    ];
+
+    function maybeSpawnEvent() {
+      if (state.event) return;
+      const gap = Date.now() - (state.lastRareEventAt || 0);
+      const baseReady = gap > 45000;
+      const luck = Math.min(0.35, 0.05 + itemCount("chrono") * 0.01);
+      if (baseReady && Math.random() < luck) {
+        const t = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
+        state.event = {
+          name: t.name,
+          desc: t.desc,
+          actionText: t.actionText,
+          endsAt: Date.now() + t.duration * 1000,
+          applyName: t.name,
+        };
+        state.lastRareEventAt = Date.now();
+        pushLog(`Rare timed event started: ${t.name}`);
+      }
+    }
+
+    eventActionBtn.addEventListener("click", () => {
+      if (!state.event) return;
+      const t = eventTemplates.find((e) => e.name === state.event.applyName);
+      if (!t) return;
+      t.apply();
+      state.event = null;
+      recomputeAchievements();
+      renderAll();
+    });
+
+    redeemBtn.addEventListener("click", () => {
+      const code = codeInput.value.trim().toUpperCase();
+      if (!code) return;
+      if (state.codeUsed.includes(code)) {
+        codeMsg.textContent = "Code already used.";
+        return;
+      }
+      const found = codeBook[code];
+      if (!found) {
+        codeMsg.textContent = "Invalid code.";
+        return;
+      }
+      if (found.clicks) gain(found.clicks);
+      if (found.unlockRandom) for (let i = 0; i < found.unlockRandom; i++) unlockRandomBeast(true);
+      if (found.unlockBeastId) unlockBeast(found.unlockBeastId);
+      if (found.labLuck) state.labLuckBonus += found.labLuck;
+      state.codeUsed.push(code);
+      codeMsg.textContent = `Redeemed: ${found.msg}`;
+      pushLog(`Code redeemed: ${code}`);
+      recomputeAchievements();
+      renderAll();
+    });
+
+    labBtn.addEventListener("click", () => {
+      const cost = 2500;
+      if (state.bites < cost) {
+        labMsg.textContent = "Not enough clicks for experiment.";
+        return;
+      }
+      gain(-cost);
+      state.labAttempts += 1;
+      const roll = state.adminGuaranteedLab ? 0 : Math.random();
+      const chance = Math.min(0.9, labChance());
+      if (roll < chance * 0.45) {
+        const found = unlockRandomBeast(true);
+        labMsg.textContent = found ? `Success! New beast: ${found.name}` : "Success! But codex is complete.";
+      } else if (roll < chance) {
+        const ach = achievements.find((a) => !state.achievements.includes(a.id));
+        if (ach) {
+          state.achievements.push(ach.id);
+          labMsg.textContent = `Breakthrough! Achievement: ${ach.name}`;
+          pushLog(`Lab breakthrough achievement: ${ach.name}`);
+        } else {
+          state.perClick += 2;
+          labMsg.textContent = "Experiment boosted click power +2.";
+        }
+      } else {
+        labMsg.textContent = "Experiment failed. Data collected, no reward.";
+      }
+      recomputeAchievements();
+      renderAll();
+    });
+
+
+    claimUpdateBtn.addEventListener("click", () => {
+      if (Date.now() < state.updateReleaseAt || state.updateUnlocked) return;
+      state.updateUnlocked = true;
+      unlockBeast("beast_120");
+      pushLog("Day-10 Update unlocked: Eclipse Frontier is now live.");
+      updateMsg.textContent = "Eclipse Frontier unlocked! Buy new update-tier upgrades and use new systems.";
+      renderAll();
+    });
+
+    ascendBtn.addEventListener("click", () => {
+      if (!state.updateUnlocked) return;
+      const cost = 1000000;
+      if (state.bites < cost) {
+        updateMsg.textContent = "Need 1M clicks to Ascend.";
+        return;
+      }
+      gain(-cost);
+      state.ascensions += 1;
+      state.perClick += 25 + state.ascensions * 3;
+      unlockRandomBeast(true);
+      pushLog(`Ascension complete. Total ascensions: ${state.ascensions}.`);
+      updateMsg.textContent = "Ascension successful: permanent click boost gained.";
+      renderAll();
+    });
+
+    mutateBtn.addEventListener("click", () => {
+      if (!state.updateUnlocked) return;
+      const cost = 250000 + state.mutationLevel * 180000;
+      if (state.bites < cost) {
+        updateMsg.textContent = `Need ${format(cost)} clicks for next mutation.`;
+        return;
+      }
+      gain(-cost);
+      state.mutationLevel += 1;
+      state.perClick += 8;
+      pushLog(`Mutation research level ${state.mutationLevel} completed.`);
+      updateMsg.textContent = `Mutation level ${state.mutationLevel} unlocked (+8 click power).`;
+      renderAll();
+    });
+
+    bossBtn.addEventListener("click", () => {
+      if (!state.updateUnlocked) return;
+      if (Date.now() < state.bossCooldownUntil) {
+        const wait = Math.ceil((state.bossCooldownUntil - Date.now()) / 1000);
+        updateMsg.textContent = `Alpha boss recovering. Wait ${wait}s.`;
+        return;
+      }
+      const power = state.perClick + totalBps() * 0.6 + state.ascensions * 120;
+      const bossHP = 1500 + state.bossWins * 650;
+      state.bossCooldownUntil = Date.now() + 45000;
+      if (power >= bossHP || Math.random() < 0.2 + state.mutationLevel * 0.01) {
+        state.bossWins += 1;
+        const reward = bossHP * 110;
+        gain(reward);
+        unlockRandomBeast(true);
+        pushLog(`Alpha boss defeated! Rewarded ${format(reward)} clicks.`);
+        updateMsg.textContent = `Boss down! +${format(reward)} clicks and a rare beast chance.`;
+      } else {
+        gain(Math.max(1200, bossHP * 8));
+        pushLog("Boss hunt failed, but fallback loot recovered.");
+        updateMsg.textContent = "Boss escaped. You recovered consolation loot.";
+      }
+      renderAll();
+    });
+
+
+
+    document.addEventListener("keydown", (ev) => {
+      if (!state.adminHotkeyEnabled) return;
+      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === "a") {
+        ev.preventDefault();
+        adminCodeOverlay.classList.remove("hidden");
+        adminCodeInput.focus();
+      }
+    });
+
+    adminCodeCancel.addEventListener("click", () => {
+      adminCodeOverlay.classList.add("hidden");
+    });
+
+    adminCodeSubmit.addEventListener("click", () => {
+      const code = adminCodeInput.value.trim();
+      if (code !== ADMIN_CODE) {
+        adminCodeMsg.textContent = "Invalid admin code.";
+        return;
+      }
+      state.adminUnlocked = true;
+      adminCodeOverlay.classList.add("hidden");
+      adminPanelOverlay.classList.remove("hidden");
+      adminCodeMsg.textContent = "Access granted.";
+      pushAdminLog("Admin panel unlocked.");
+      renderCore();
+    });
+
+    adminPanelClose.addEventListener("click", () => adminPanelOverlay.classList.add("hidden"));
+
+    function requireAdmin(fn) {
+      return () => {
+        if (!state.adminUnlocked) {
+          pushAdminLog("Blocked admin action (not unlocked).");
+          return;
+        }
+        fn();
+        renderAll();
+      };
+    }
+
+    adminAdd1k.addEventListener("click", requireAdmin(() => { gain(1000); pushAdminLog("Granted 1K clicks."); }));
+    adminAdd1m.addEventListener("click", requireAdmin(() => { gain(1_000_000); pushAdminLog("Granted 1M clicks."); }));
+    adminAdd1b.addEventListener("click", requireAdmin(() => { gain(1_000_000_000); pushAdminLog("Granted 1B clicks."); }));
+    adminGiveCustom.addEventListener("click", requireAdmin(() => {
+      const amount = Number(adminCustomClicks.value || 0);
+      if (!Number.isFinite(amount) || amount <= 0) { pushAdminLog("Invalid custom amount."); return; }
+      gain(amount);
+      pushAdminLog(`Granted custom clicks: ${format(amount)}.`);
+    }));
+
+    adminUnlockAllBeasts.addEventListener("click", requireAdmin(() => { beasts.forEach((b) => unlockBeast(b.id)); pushAdminLog("Unlocked all beasts."); }));
+    adminUnlockUpdate.addEventListener("click", requireAdmin(() => { state.updateUnlocked = true; state.updateReleaseAt = Date.now() - 1000; pushAdminLog("Force-unlocked Day-10 update."); }));
+    adminMaxBaseShop.addEventListener("click", requireAdmin(() => {
+      for (const item of shopItems) {
+        const before = itemCount(item.id);
+        const target = Math.max(before, 25);
+        state.items[item.id] = target;
+        if (item.clickBoost) state.perClick += item.clickBoost * (target - before);
+      }
+      pushAdminLog("Set base shop ownership to at least 25 each.");
+    }));
+    adminMaxUpdateShop.addEventListener("click", requireAdmin(() => {
+      state.updateUnlocked = true;
+      for (const item of updateShopItems) {
+        const target = Math.max(itemCount(item.id), 10);
+        const before = itemCount(item.id);
+        state.items[item.id] = target;
+        if (item.clickBoost) state.perClick += item.clickBoost * (target - before);
+      }
+      pushAdminLog("Set update shop ownership to at least 10 each.");
+    }));
+
+    adminForceEvent.addEventListener("click", requireAdmin(() => {
+      const t = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
+      state.event = { name: t.name, desc: t.desc, actionText: t.actionText, endsAt: Date.now() + t.duration * 1000, applyName: t.name };
+      pushAdminLog(`Forced event: ${t.name}.`);
+    }));
+    adminLabSuccess.addEventListener("click", requireAdmin(() => { state.adminGuaranteedLab = !state.adminGuaranteedLab; pushAdminLog(`Guaranteed lab success: ${state.adminGuaranteedLab ? 'ON' : 'OFF'}.`); }));
+    adminBossWin.addEventListener("click", requireAdmin(() => {
+      state.updateUnlocked = true;
+      state.bossCooldownUntil = 0;
+      state.bossWins += 1;
+      const reward = (1500 + state.bossWins * 650) * 120;
+      gain(reward);
+      unlockRandomBeast(true);
+      pushAdminLog(`Forced boss win and granted ${format(reward)} clicks.`);
+    }));
+    adminAchievementsAll.addEventListener("click", requireAdmin(() => {
+      for (const a of achievements) if (!state.achievements.includes(a.id)) state.achievements.push(a.id);
+      pushAdminLog("Unlocked all achievements.");
+    }));
+
+    adminToggleGodClick.addEventListener("click", requireAdmin(() => { state.adminGodClick = !state.adminGodClick; pushAdminLog(`God Click ${state.adminGodClick ? 'enabled' : 'disabled'}.`); }));
+    adminToggleGodBps.addEventListener("click", requireAdmin(() => { state.adminGodBps = !state.adminGodBps; pushAdminLog(`God BPS ${state.adminGodBps ? 'enabled' : 'disabled'}.`); }));
+    adminTogglePanelHotkey.addEventListener("click", requireAdmin(() => { state.adminHotkeyEnabled = !state.adminHotkeyEnabled; pushAdminLog(`Admin hotkey ${state.adminHotkeyEnabled ? 'enabled' : 'disabled'}.`); }));
+    adminWipeCodes.addEventListener("click", requireAdmin(() => { state.codeUsed = []; pushAdminLog("Cleared redeemed code history."); }));
+
+    resetBtn.addEventListener("click", () => {
+      if (!confirm("Reset all progress?")) return;
+      state = structuredClone(defaultState);
+      save();
+      renderAll();
+    });
+
+    setInterval(() => {
+      gain(state.adminGodBps ? totalBps() * 10 : totalBps());
+      maybeSpawnEvent();
+      recomputeAchievements();
+      renderCore();
+    }, 1000);
+
+    setInterval(save, 1000);
+
+    renderAll();
+  </script>
+</body>
+</html>
