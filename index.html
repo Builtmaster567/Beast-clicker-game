@@ -177,7 +177,39 @@
       border-radius: 10px;
       padding: 0.6rem;
     }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 7, 18, 0.72);
+      display: grid;
+      place-items: center;
+      z-index: 20;
+      padding: 1rem;
+    }
+    .modal {
+      width: min(900px, 100%);
+      max-height: 85vh;
+      overflow: auto;
+      background: #0c1731;
+      border: 1px solid #395487;
+      border-radius: 12px;
+      padding: 0.8rem;
+    }
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+    .admin-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.55rem;
+      background: #101d3e;
+    }
+    @media (max-width: 980px) {
+      .admin-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 980px) {
       .layout { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -263,9 +295,88 @@
     </section>
   </main>
 
+
+
+  <div class="overlay hidden" id="adminCodeOverlay">
+    <div class="modal">
+      <h3>🔐 Admin Code Access</h3>
+      <p class="small">Press Ctrl+Shift+A anytime to open this box.</p>
+      <div class="row">
+        <input id="adminCodeInput" placeholder="Enter admin code" />
+        <button class="secondary" id="adminCodeSubmit">Unlock</button>
+        <button class="secondary" id="adminCodeCancel">Close</button>
+      </div>
+      <p class="small" id="adminCodeMsg">Admin tools are hidden until unlocked.</p>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="adminPanelOverlay">
+    <div class="modal">
+      <div class="row" style="justify-content:space-between;">
+        <h3>🛠️ Massive Admin Panel</h3>
+        <button class="secondary" id="adminPanelClose">Close Panel</button>
+      </div>
+      <p class="small">Use carefully. These controls directly modify progression.</p>
+
+      <div class="admin-grid">
+        <section class="admin-card">
+          <h4>Economy</h4>
+          <div class="row">
+            <button class="secondary" id="adminAdd1k">+1K</button>
+            <button class="secondary" id="adminAdd1m">+1M</button>
+            <button class="secondary" id="adminAdd1b">+1B</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <input id="adminCustomClicks" placeholder="Custom clicks amount" />
+            <button class="secondary" id="adminGiveCustom">Give</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <h4>Progression</h4>
+          <div class="row">
+            <button class="secondary" id="adminUnlockAllBeasts">Unlock All Beasts</button>
+            <button class="secondary" id="adminUnlockUpdate">Unlock Day-10</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <button class="secondary" id="adminMaxBaseShop">Buy 25 each (base)</button>
+            <button class="secondary" id="adminMaxUpdateShop">Buy 10 each (update)</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <h4>Systems</h4>
+          <div class="row">
+            <button class="secondary" id="adminForceEvent">Force Rare Event</button>
+            <button class="secondary" id="adminLabSuccess">Guaranteed Lab Success</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <button class="secondary" id="adminBossWin">Force Boss Win</button>
+            <button class="secondary" id="adminAchievementsAll">Unlock Achievements</button>
+          </div>
+        </section>
+
+        <section class="admin-card">
+          <h4>Toggles</h4>
+          <div class="row">
+            <button class="secondary" id="adminToggleGodClick">God Click: OFF</button>
+            <button class="secondary" id="adminToggleGodBps">God BPS: OFF</button>
+          </div>
+          <div class="row" style="margin-top:0.4rem;">
+            <button class="secondary" id="adminTogglePanelHotkey">Hotkey Enabled</button>
+            <button class="secondary" id="adminWipeCodes">Clear Used Codes</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="log" id="adminLog" style="margin-top:0.7rem;"></div>
+    </div>
+  </div>
+
   <script>
-    const STORAGE_KEY = "beast_clicker_save_v3";
+    const STORAGE_KEY = "beast_clicker_save_v4";
     const UPDATE_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
+    const ADMIN_CODE = "BEAST-ROOT-ALPHA";
 
     const beasts = Array.from({ length: 120 }, (_, i) => {
       const icons = ["🐉", "🦁", "🐺", "🦂", "🕷️", "🦅", "🐍", "🦇", "🦖", "🦈", "🦬", "🦌"];
@@ -333,6 +444,11 @@
       mutationLevel: 0,
       bossWins: 0,
       bossCooldownUntil: 0,
+      adminUnlocked: false,
+      adminGodClick: false,
+      adminGodBps: false,
+      adminHotkeyEnabled: true,
+      adminGuaranteedLab: false,
     };
 
     let state = load();
@@ -366,6 +482,31 @@
     const mutationLevelEl = document.getElementById("mutationLevel");
     const bossWinsEl = document.getElementById("bossWins");
     const logEl = document.getElementById("log");
+    const adminCodeOverlay = document.getElementById("adminCodeOverlay");
+    const adminCodeInput = document.getElementById("adminCodeInput");
+    const adminCodeSubmit = document.getElementById("adminCodeSubmit");
+    const adminCodeCancel = document.getElementById("adminCodeCancel");
+    const adminCodeMsg = document.getElementById("adminCodeMsg");
+    const adminPanelOverlay = document.getElementById("adminPanelOverlay");
+    const adminPanelClose = document.getElementById("adminPanelClose");
+    const adminLogEl = document.getElementById("adminLog");
+    const adminAdd1k = document.getElementById("adminAdd1k");
+    const adminAdd1m = document.getElementById("adminAdd1m");
+    const adminAdd1b = document.getElementById("adminAdd1b");
+    const adminCustomClicks = document.getElementById("adminCustomClicks");
+    const adminGiveCustom = document.getElementById("adminGiveCustom");
+    const adminUnlockAllBeasts = document.getElementById("adminUnlockAllBeasts");
+    const adminUnlockUpdate = document.getElementById("adminUnlockUpdate");
+    const adminMaxBaseShop = document.getElementById("adminMaxBaseShop");
+    const adminMaxUpdateShop = document.getElementById("adminMaxUpdateShop");
+    const adminForceEvent = document.getElementById("adminForceEvent");
+    const adminLabSuccess = document.getElementById("adminLabSuccess");
+    const adminBossWin = document.getElementById("adminBossWin");
+    const adminAchievementsAll = document.getElementById("adminAchievementsAll");
+    const adminToggleGodClick = document.getElementById("adminToggleGodClick");
+    const adminToggleGodBps = document.getElementById("adminToggleGodBps");
+    const adminTogglePanelHotkey = document.getElementById("adminTogglePanelHotkey");
+    const adminWipeCodes = document.getElementById("adminWipeCodes");
 
     function load() {
       try {
@@ -410,6 +551,18 @@
     function pushLog(text) {
       state.logs.push(`[${new Date().toLocaleTimeString()}] ${text}`);
       state.logs = state.logs.slice(-40);
+    }
+
+    function pushAdminLog(text) {
+      if (!window.__adminLogs) window.__adminLogs = [];
+      window.__adminLogs.push(`[${new Date().toLocaleTimeString()}] ${text}`);
+      window.__adminLogs = window.__adminLogs.slice(-20);
+      if (adminLogEl) adminLogEl.innerHTML = window.__adminLogs.map((x) => `<div>${x}</div>`).join('');
+      pushLog(`[ADMIN] ${text}`);
+    }
+
+    function isAdminOpen() {
+      return !adminPanelOverlay.classList.contains('hidden');
     }
 
     function unlockBeast(id) {
@@ -527,6 +680,9 @@
       mutationLevelEl.textContent = state.mutationLevel;
       bossWinsEl.textContent = state.bossWins;
       logEl.innerHTML = state.logs.slice(-12).map((t) => `<div>${t}</div>`).join("");
+      adminToggleGodClick.textContent = `God Click: ${state.adminGodClick ? 'ON' : 'OFF'}`;
+      adminToggleGodBps.textContent = `God BPS: ${state.adminGodBps ? 'ON' : 'OFF'}`;
+      adminTogglePanelHotkey.textContent = state.adminHotkeyEnabled ? 'Hotkey Enabled' : 'Hotkey Disabled';
       renderEvent();
       renderCountdown();
     }
@@ -543,7 +699,8 @@
     }
 
     function clickBeast(ev) {
-      gain(state.perClick);
+      const clickPower = state.adminGodClick ? state.perClick * 10 : state.perClick;
+      gain(clickPower);
       state.totalClicks += 1;
 
       if (Math.random() < rareChance()) {
@@ -556,7 +713,7 @@
 
       const pop = document.createElement("span");
       pop.className = "popup";
-      pop.textContent = `+${format(state.perClick)}`;
+      pop.textContent = `+${format(clickPower)}`;
       const rect = beastButton.getBoundingClientRect();
       pop.style.left = `${(ev?.clientX ?? rect.left + rect.width / 2) - rect.left}px`;
       pop.style.top = `${(ev?.clientY ?? rect.top + rect.height / 2) - rect.top}px`;
@@ -571,7 +728,7 @@
     shopEl.addEventListener("click", (ev) => {
       const btn = ev.target.closest("button.buy");
       if (!btn) return;
-      const item = shopItems.find((s) => s.id === btn.dataset.id);
+      const item = allShopItems().find((s) => s.id === btn.dataset.id);
       if (!item) return;
       const cost = currentCost(item);
       if (state.bites < cost) return;
@@ -676,7 +833,7 @@
       }
       gain(-cost);
       state.labAttempts += 1;
-      const roll = Math.random();
+      const roll = state.adminGuaranteedLab ? 0 : Math.random();
       const chance = Math.min(0.9, labChance());
       if (roll < chance * 0.45) {
         const found = unlockRandomBeast(true);
@@ -764,6 +921,105 @@
       renderAll();
     });
 
+
+
+    document.addEventListener("keydown", (ev) => {
+      if (!state.adminHotkeyEnabled) return;
+      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === "a") {
+        ev.preventDefault();
+        adminCodeOverlay.classList.remove("hidden");
+        adminCodeInput.focus();
+      }
+    });
+
+    adminCodeCancel.addEventListener("click", () => {
+      adminCodeOverlay.classList.add("hidden");
+    });
+
+    adminCodeSubmit.addEventListener("click", () => {
+      const code = adminCodeInput.value.trim();
+      if (code !== ADMIN_CODE) {
+        adminCodeMsg.textContent = "Invalid admin code.";
+        return;
+      }
+      state.adminUnlocked = true;
+      adminCodeOverlay.classList.add("hidden");
+      adminPanelOverlay.classList.remove("hidden");
+      adminCodeMsg.textContent = "Access granted.";
+      pushAdminLog("Admin panel unlocked.");
+      renderCore();
+    });
+
+    adminPanelClose.addEventListener("click", () => adminPanelOverlay.classList.add("hidden"));
+
+    function requireAdmin(fn) {
+      return () => {
+        if (!state.adminUnlocked) {
+          pushAdminLog("Blocked admin action (not unlocked).");
+          return;
+        }
+        fn();
+        renderAll();
+      };
+    }
+
+    adminAdd1k.addEventListener("click", requireAdmin(() => { gain(1000); pushAdminLog("Granted 1K clicks."); }));
+    adminAdd1m.addEventListener("click", requireAdmin(() => { gain(1_000_000); pushAdminLog("Granted 1M clicks."); }));
+    adminAdd1b.addEventListener("click", requireAdmin(() => { gain(1_000_000_000); pushAdminLog("Granted 1B clicks."); }));
+    adminGiveCustom.addEventListener("click", requireAdmin(() => {
+      const amount = Number(adminCustomClicks.value || 0);
+      if (!Number.isFinite(amount) || amount <= 0) { pushAdminLog("Invalid custom amount."); return; }
+      gain(amount);
+      pushAdminLog(`Granted custom clicks: ${format(amount)}.`);
+    }));
+
+    adminUnlockAllBeasts.addEventListener("click", requireAdmin(() => { beasts.forEach((b) => unlockBeast(b.id)); pushAdminLog("Unlocked all beasts."); }));
+    adminUnlockUpdate.addEventListener("click", requireAdmin(() => { state.updateUnlocked = true; state.updateReleaseAt = Date.now() - 1000; pushAdminLog("Force-unlocked Day-10 update."); }));
+    adminMaxBaseShop.addEventListener("click", requireAdmin(() => {
+      for (const item of shopItems) {
+        const before = itemCount(item.id);
+        const target = Math.max(before, 25);
+        state.items[item.id] = target;
+        if (item.clickBoost) state.perClick += item.clickBoost * (target - before);
+      }
+      pushAdminLog("Set base shop ownership to at least 25 each.");
+    }));
+    adminMaxUpdateShop.addEventListener("click", requireAdmin(() => {
+      state.updateUnlocked = true;
+      for (const item of updateShopItems) {
+        const target = Math.max(itemCount(item.id), 10);
+        const before = itemCount(item.id);
+        state.items[item.id] = target;
+        if (item.clickBoost) state.perClick += item.clickBoost * (target - before);
+      }
+      pushAdminLog("Set update shop ownership to at least 10 each.");
+    }));
+
+    adminForceEvent.addEventListener("click", requireAdmin(() => {
+      const t = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
+      state.event = { name: t.name, desc: t.desc, actionText: t.actionText, endsAt: Date.now() + t.duration * 1000, applyName: t.name };
+      pushAdminLog(`Forced event: ${t.name}.`);
+    }));
+    adminLabSuccess.addEventListener("click", requireAdmin(() => { state.adminGuaranteedLab = !state.adminGuaranteedLab; pushAdminLog(`Guaranteed lab success: ${state.adminGuaranteedLab ? 'ON' : 'OFF'}.`); }));
+    adminBossWin.addEventListener("click", requireAdmin(() => {
+      state.updateUnlocked = true;
+      state.bossCooldownUntil = 0;
+      state.bossWins += 1;
+      const reward = (1500 + state.bossWins * 650) * 120;
+      gain(reward);
+      unlockRandomBeast(true);
+      pushAdminLog(`Forced boss win and granted ${format(reward)} clicks.`);
+    }));
+    adminAchievementsAll.addEventListener("click", requireAdmin(() => {
+      for (const a of achievements) if (!state.achievements.includes(a.id)) state.achievements.push(a.id);
+      pushAdminLog("Unlocked all achievements.");
+    }));
+
+    adminToggleGodClick.addEventListener("click", requireAdmin(() => { state.adminGodClick = !state.adminGodClick; pushAdminLog(`God Click ${state.adminGodClick ? 'enabled' : 'disabled'}.`); }));
+    adminToggleGodBps.addEventListener("click", requireAdmin(() => { state.adminGodBps = !state.adminGodBps; pushAdminLog(`God BPS ${state.adminGodBps ? 'enabled' : 'disabled'}.`); }));
+    adminTogglePanelHotkey.addEventListener("click", requireAdmin(() => { state.adminHotkeyEnabled = !state.adminHotkeyEnabled; pushAdminLog(`Admin hotkey ${state.adminHotkeyEnabled ? 'enabled' : 'disabled'}.`); }));
+    adminWipeCodes.addEventListener("click", requireAdmin(() => { state.codeUsed = []; pushAdminLog("Cleared redeemed code history."); }));
+
     resetBtn.addEventListener("click", () => {
       if (!confirm("Reset all progress?")) return;
       state = structuredClone(defaultState);
@@ -772,7 +1028,7 @@
     });
 
     setInterval(() => {
-      gain(totalBps());
+      gain(state.adminGodBps ? totalBps() * 10 : totalBps());
       maybeSpawnEvent();
       recomputeAchievements();
       renderCore();
