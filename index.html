@@ -1,1042 +1,1127 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Beast Clicker: Wild Epoch</title>
-  <style>
-    :root {
-      --bg: #0a1020;
-      --panel: #111b34;
-      --line: #24314e;
-      --text: #e5edff;
-      --muted: #98abcc;
-      --accent: #7dd3fc;
-      --buy: #fbbf24;
-      --good: #6ee7b7;
-      --warn: #fca5a5;
-      --rare: #c084fc;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      color: var(--text);
-      background: radial-gradient(circle at top, #172554 0%, var(--bg) 45%);
-      padding: 1rem;
-    }
-    .layout {
-      width: min(1200px, 100%);
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 1rem;
-    }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 0.9rem;
-      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
-    }
-    h1, h2, h3 { margin: 0.3rem 0 0.7rem; }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.5rem;
-      margin-bottom: 0.8rem;
-    }
-    .stat {
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #0b1430;
-      padding: 0.45rem;
-    }
-    .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .value { font-weight: 700; font-size: 1.15rem; }
-    #beastButton {
-      width: 100%;
-      min-height: 210px;
-      border: none;
-      border-radius: 14px;
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #08152b;
-      cursor: pointer;
-      background: linear-gradient(155deg, #22d3ee, #38bdf8 55%, #818cf8);
-      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
-      position: relative;
-      overflow: hidden;
-    }
-    #beastButton:active { transform: scale(0.99); }
-    .beast-emoji { font-size: 3.4rem; display: block; }
-    .beast-name { font-size: 1rem; display: block; margin-top: 0.25rem; }
-    .popup {
-      position: absolute;
-      font-weight: 800;
-      pointer-events: none;
-      color: var(--good);
-      animation: pop 750ms ease forwards;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
-    }
-    @keyframes pop {
-      from { transform: translateY(0) scale(0.95); opacity: 1; }
-      to { transform: translateY(-34px) scale(1.06); opacity: 0; }
-    }
-    .event-banner {
-      margin-top: 0.7rem;
-      padding: 0.6rem;
-      border-radius: 10px;
-      border: 1px dashed var(--rare);
-      background: #21113f;
-    }
-    .row { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
-    .pill {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 0.2rem 0.55rem;
-      background: #0d1837;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-    .shop {
-      max-height: 430px;
-      overflow: auto;
-      display: grid;
-      gap: 0.45rem;
-      margin-top: 0.5rem;
-    }
-    .item {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 0.5rem;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 0.55rem;
-      background: #0b1430;
-    }
-    .buy, .secondary {
-      border: none;
-      border-radius: 9px;
-      padding: 0.45rem 0.65rem;
-      cursor: pointer;
-      font-weight: 700;
-    }
-    .buy { background: linear-gradient(155deg, var(--buy), #f97316); color: #1f2937; }
-    .buy:disabled { opacity: 0.45; cursor: not-allowed; }
-    .secondary { background: #243b6b; color: var(--text); border: 1px solid #375087; }
-    .grid2 {
-      margin-top: 0.7rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.6rem;
-    }
-    input {
-      width: 100%;
-      border: 1px solid #3b4f7c;
-      background: #0b1430;
-      border-radius: 8px;
-      color: var(--text);
-      padding: 0.48rem;
-    }
-    .small { color: var(--muted); font-size: 0.82rem; }
-    .collection {
-      margin-top: 0.5rem;
-      max-height: 230px;
-      overflow: auto;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.35rem;
-    }
-    .beast-chip {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 0.35rem;
-      font-size: 0.8rem;
-      background: #0b1430;
-    }
-    .locked { filter: grayscale(1); opacity: 0.55; }
-    .lab-box { margin-top: 0.6rem; border: 1px solid #4b2c73; background: #1d1134; border-radius: 10px; padding: 0.55rem; }
-    .log {
-      margin-top: 0.5rem;
-      max-height: 110px;
-      overflow: auto;
-      padding: 0.4rem;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #0b1430;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .update-panel {
-      margin-top: 0.7rem;
-      border: 1px solid #365a8d;
-      background: #10203f;
-      border-radius: 10px;
-      padding: 0.6rem;
-    }
-    .hidden { display: none !important; }
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(1, 7, 18, 0.72);
-      display: grid;
-      place-items: center;
-      z-index: 20;
-      padding: 1rem;
-    }
-    .modal {
-      width: min(900px, 100%);
-      max-height: 85vh;
-      overflow: auto;
-      background: #0c1731;
-      border: 1px solid #395487;
-      border-radius: 12px;
-      padding: 0.8rem;
-    }
-    .admin-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.6rem;
-    }
-    .admin-card {
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 0.55rem;
-      background: #101d3e;
-    }
-    @media (max-width: 980px) {
-      .admin-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 980px) {
-      .layout { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .collection { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix - Watch Movies & TV Shows</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #e50914;
+            --primary-dark: #c40812;
+            --bg-dark: #141414;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --card-hover: #2a2a2a;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-logo {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: var(--transition);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+        }
+
+        .navbar.scrolled {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 4%;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: 1px;
+            transition: var(--transition);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .search-btn, .notification-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .search-btn:hover, .notification-btn:hover {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .profile-pic {
+            width: 35px;
+            height: 35px;
+            border-radius: 5px;
+            background: linear-gradient(45deg, var(--primary), #ff6b6b);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-pic:hover {
+            transform: scale(1.1);
+        }
+
+        .hero {
+            position: relative;
+            height: 85vh;
+            overflow: hidden;
+        }
+
+        .hero-slider {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hero-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .hero-slide.active {
+            opacity: 1;
+        }
+
+        .hero-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.6);
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%),
+                        linear-gradient(to top, var(--bg-dark) 0%, transparent 50%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 4%;
+            max-width: 700px;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+            animation: slideUp 0.8s ease;
+        }
+
+        .hero-description {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            animation: slideUp 0.8s ease 0.2s backwards;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            animation: slideUp 0.8s ease 0.4s backwards;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .content-section {
+            padding: 3rem 4%;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .view-all {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .view-all:hover {
+            color: var(--primary);
+        }
+
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .carousel {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            padding: 1rem 0;
+        }
+
+        .carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        .carousel-container:hover .carousel-nav {
+            opacity: 1;
+        }
+
+        .carousel-nav:hover {
+            background: var(--primary);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .carousel-nav.prev {
+            left: 10px;
+        }
+
+        .carousel-nav.next {
+            right: 10px;
+        }
+
+        .movie-card {
+            flex: 0 0 200px;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .movie-card:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .movie-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 70%);
+            opacity: 0;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1rem;
+        }
+
+        .movie-card:hover .movie-overlay {
+            opacity: 1;
+        }
+
+        .movie-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .movie-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .movie-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: #ffd700;
+        }
+
+        .play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .movie-card:hover .play-btn {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .play-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            background: var(--primary-dark);
+        }
+
+        .video-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .video-modal.active {
+            display: flex;
+        }
+
+        .video-container {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+        }
+
+        .video-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 10px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+            transform: rotate(90deg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .search-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .search-modal.active {
+            display: block;
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 100px auto 0;
+            padding: 2rem;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 3rem 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            color: white;
+            font-size: 1.2rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        .search-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .search-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        .footer {
+            padding: 4rem 4% 2rem;
+            background: var(--bg-secondary);
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .movie-card {
+                flex: 0 0 150px;
+            }
+            
+            .movie-poster {
+                height: 225px;
+            }
+        }
+
+        .server-selector {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1rem;
+            border-radius: 10px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .server-selector.active {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        .server-btn {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .server-btn:hover, .server-btn.active {
+            background: var(--primary);
+        }
+    </style>
 </head>
 <body>
-  <main class="layout">
-    <section class="panel">
-      <h1>🐾 Beast Clicker: Wild Epoch</h1>
-      <div class="stats">
-        <div class="stat"><div class="label">Beast Clicks</div><div class="value" id="bites">0</div></div>
-        <div class="stat"><div class="label">Per Sec</div><div class="value" id="bps">0</div></div>
-        <div class="stat"><div class="label">Per Click</div><div class="value" id="perClick">1</div></div>
-        <div class="stat"><div class="label">Achievements</div><div class="value" id="achievementCount">0</div></div>
-      </div>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">STREAMFLIX</div>
+    </div>
 
-      <button id="beastButton">
-        <span class="beast-emoji" id="activeBeastEmoji">🐉</span>
-        <span>Tap to harvest beast clicks</span>
-        <span class="beast-name" id="activeBeastName">Ancient Drake</span>
-      </button>
-
-      <div class="event-banner" id="eventBanner">
-        <strong>Rare event:</strong> <span id="eventText">No active event right now.</span>
-        <div class="row" style="margin-top:0.45rem;">
-          <button class="secondary" id="eventActionBtn" disabled>Event action</button>
-          <span class="pill" id="eventTimer">--</span>
+    <nav class="navbar" id="navbar">
+        <a href="#" class="logo">STREAMFLIX</a>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#movies">Movies</a></li>
+            <li><a href="#series">TV Series</a></li>
+            <li><a href="#new">New & Popular</a></li>
+            <li><a href="#mylist">My List</a></li>
+        </ul>
+        <div class="nav-actions">
+            <button class="search-btn" onclick="toggleSearch()"><i class="fas fa-search"></i></button>
+            <button class="notification-btn"><i class="fas fa-bell"></i></button>
+            <div class="profile-pic"></div>
         </div>
-      </div>
+    </nav>
 
-      <div class="grid2">
-        <div class="panel" style="padding:0.6rem; margin:0;">
-          <h3>🎟️ Redeem Codes</h3>
-          <div class="row">
-            <input id="codeInput" placeholder="Enter code (e.g. WILDSTART)" />
-            <button class="secondary" id="redeemBtn">Redeem</button>
-          </div>
-          <p class="small" id="codeMsg">Codes can grant clicks, beasts, or lab boosts.</p>
-        </div>
-        <div class="panel" style="padding:0.6rem; margin:0;">
-          <h3>🧪 Experiment Lab</h3>
-          <p class="small">Spend 2,500 clicks for a risky experiment. You might discover a rare beast or achievement.</p>
-          <button class="secondary" id="labBtn">Run Experiment (2.5K)</button>
-          <p class="small" id="labMsg">No experiment yet.</p>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:0.6rem;">
-        <span class="pill">Next update: <strong id="updateCountdown">10d 00h 00m</strong></span>
-        <button class="secondary" id="claimUpdateBtn" disabled>Unlock Day-10 Update</button>
-        <button class="secondary" id="resetBtn">Reset Save</button>
-      </div>
-
-      <div class="update-panel hidden" id="updatePanel">
-        <h3>🚀 Day-10 Update: Eclipse Frontier</h3>
-        <p class="small">New systems unlocked: Ascension, Mutation Research, and Alpha Boss Hunts.</p>
-        <div class="row">
-          <span class="pill">Ascensions: <strong id="ascensionsCount">0</strong></span>
-          <span class="pill">Mutation Level: <strong id="mutationLevel">0</strong></span>
-          <span class="pill">Boss Wins: <strong id="bossWins">0</strong></span>
-        </div>
-        <div class="row" style="margin-top:0.45rem;">
-          <button class="secondary" id="ascendBtn">Ascend (1M clicks)</button>
-          <button class="secondary" id="mutateBtn">Research Mutation</button>
-          <button class="secondary" id="bossBtn">Hunt Alpha Boss</button>
-        </div>
-        <p class="small" id="updateMsg">Reach the update timer to unlock this content.</p>
-      </div>
-
-      <div class="log" id="log"></div>
+    <section class="hero" id="home">
+        <div class="hero-slider" id="heroSlider"></div>
     </section>
 
-    <section class="panel">
-      <h2>🛒 Mega Shop (30+ upgrades)</h2>
-      <p class="small">Build your beast empire with hunters, shrines, relics, automation, and arcane tech.</p>
-      <div class="shop" id="shop"></div>
+    <main id="mainContent">
+        <section class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Trending Now</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev" onclick="scrollCarousel('trending', -1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel" id="trendingCarousel"></div>
+                <button class="carousel-nav next" onclick="scrollCarousel('trending', 1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
 
-      <h3 style="margin-top:0.8rem;">📚 Beast Codex (120 beasts)</h3>
-      <p class="small">Unlocked beasts can appear as your active click beast and grant flavor prestige.</p>
-      <div class="collection" id="collection"></div>
-    </section>
-  </main>
+        <section class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Top Rated</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev" onclick="scrollCarousel('toprated', -1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel" id="topratedCarousel"></div>
+                <button class="carousel-nav next" onclick="scrollCarousel('toprated', 1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
 
+        <section class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Action Movies</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev" onclick="scrollCarousel('action', -1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel" id="actionCarousel"></div>
+                <button class="carousel-nav next" onclick="scrollCarousel('action', 1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
 
+        <section class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Sci-Fi & Fantasy</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev" onclick="scrollCarousel('scifi', -1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel" id="scifiCarousel"></div>
+                <button class="carousel-nav next" onclick="scrollCarousel('scifi', 1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
 
-  <div class="overlay hidden" id="adminCodeOverlay">
-    <div class="modal">
-      <h3>🔐 Admin Code Access</h3>
-      <p class="small">Press Ctrl+Shift+A anytime to open this box.</p>
-      <div class="row">
-        <input id="adminCodeInput" placeholder="Enter admin code" />
-        <button class="secondary" id="adminCodeSubmit">Unlock</button>
-        <button class="secondary" id="adminCodeCancel">Close</button>
-      </div>
-      <p class="small" id="adminCodeMsg">Admin tools are hidden until unlocked.</p>
+        <section class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">New Releases</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev" onclick="scrollCarousel('newrelease', -1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel" id="newreleaseCarousel"></div>
+                <button class="carousel-nav next" onclick="scrollCarousel('newrelease', 1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+    </main>
+
+    <div class="video-modal" id="videoModal">
+        <div class="video-container">
+            <button class="close-modal" onclick="closeVideoModal()">&times;</button>
+            <iframe class="video-frame" id="videoFrame" src="" allowfullscreen></iframe>
+        </div>
     </div>
-  </div>
 
-  <div class="overlay hidden" id="adminPanelOverlay">
-    <div class="modal">
-      <div class="row" style="justify-content:space-between;">
-        <h3>🛠️ Massive Admin Panel</h3>
-        <button class="secondary" id="adminPanelClose">Close Panel</button>
-      </div>
-      <p class="small">Use carefully. These controls directly modify progression.</p>
-
-      <div class="admin-grid">
-        <section class="admin-card">
-          <h4>Economy</h4>
-          <div class="row">
-            <button class="secondary" id="adminAdd1k">+1K</button>
-            <button class="secondary" id="adminAdd1m">+1M</button>
-            <button class="secondary" id="adminAdd1b">+1B</button>
-          </div>
-          <div class="row" style="margin-top:0.4rem;">
-            <input id="adminCustomClicks" placeholder="Custom clicks amount" />
-            <button class="secondary" id="adminGiveCustom">Give</button>
-          </div>
-        </section>
-
-        <section class="admin-card">
-          <h4>Progression</h4>
-          <div class="row">
-            <button class="secondary" id="adminUnlockAllBeasts">Unlock All Beasts</button>
-            <button class="secondary" id="adminUnlockUpdate">Unlock Day-10</button>
-          </div>
-          <div class="row" style="margin-top:0.4rem;">
-            <button class="secondary" id="adminMaxBaseShop">Buy 25 each (base)</button>
-            <button class="secondary" id="adminMaxUpdateShop">Buy 10 each (update)</button>
-          </div>
-        </section>
-
-        <section class="admin-card">
-          <h4>Systems</h4>
-          <div class="row">
-            <button class="secondary" id="adminForceEvent">Force Rare Event</button>
-            <button class="secondary" id="adminLabSuccess">Guaranteed Lab Success</button>
-          </div>
-          <div class="row" style="margin-top:0.4rem;">
-            <button class="secondary" id="adminBossWin">Force Boss Win</button>
-            <button class="secondary" id="adminAchievementsAll">Unlock Achievements</button>
-          </div>
-        </section>
-
-        <section class="admin-card">
-          <h4>Toggles</h4>
-          <div class="row">
-            <button class="secondary" id="adminToggleGodClick">God Click: OFF</button>
-            <button class="secondary" id="adminToggleGodBps">God BPS: OFF</button>
-          </div>
-          <div class="row" style="margin-top:0.4rem;">
-            <button class="secondary" id="adminTogglePanelHotkey">Hotkey Enabled</button>
-            <button class="secondary" id="adminWipeCodes">Clear Used Codes</button>
-          </div>
-        </section>
-      </div>
-
-      <div class="log" id="adminLog" style="margin-top:0.7rem;"></div>
+    <div class="search-modal" id="searchModal">
+        <button class="search-close" onclick="toggleSearch()">&times;</button>
+        <div class="search-container">
+            <div class="search-input-wrapper">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search movies, TV shows..." onkeyup="searchMovies()">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const STORAGE_KEY = "beast_clicker_save_v4";
-    const UPDATE_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
-    const ADMIN_CODE = "BEAST-ROOT-ALPHA";
+    <div class="server-selector" id="serverSelector">
+        <button class="server-btn active" onclick="changeServer('vidapi')">VidAPI</button>
+        <button class="server-btn" onclick="changeServer('fmovies')">FMovies</button>
+        <button class="server-btn" onclick="changeServer('embedsu')">EmbedSu</button>
+    </div>
 
-    const beasts = Array.from({ length: 120 }, (_, i) => {
-      const icons = ["🐉", "🦁", "🐺", "🦂", "🕷️", "🦅", "🐍", "🦇", "🦖", "🦈", "🦬", "🦌"];
-      const icon = icons[i % icons.length];
-      const tier = i >= 100 ? "Mythic" : i >= 70 ? "Epic" : i >= 35 ? "Rare" : "Common";
-      return { id: `beast_${i + 1}`, name: `${tier} Beast #${i + 1}`, icon, rarity: tier };
-    });
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>About StreamFlix</h4>
+                <ul class="footer-links">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Press</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Devices</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">DMCA</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Facebook</a></li>
+                    <li><a href="#">Twitter</a></li>
+                    <li><a href="#">Instagram</a></li>
+                    <li><a href="#">YouTube</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 StreamFlix. All rights reserved.</p>
+        </div>
+    </footer>
 
-    const achievements = [
-      { id: "ach_first_click", name: "First Blood", check: (s) => s.totalClicks >= 1 },
-      { id: "ach_1k", name: "Thousand Fangs", check: (s) => s.bites >= 1000 },
-      { id: "ach_100k", name: "Savage Economy", check: (s) => s.bites >= 100000 },
-      { id: "ach_20beasts", name: "Beast Binder", check: (s) => s.unlockedBeasts.length >= 20 },
-      { id: "ach_100beasts", name: "Wild Curator", check: (s) => s.unlockedBeasts.length >= 100 },
-      { id: "ach_lab5", name: "Mad Scientist", check: (s) => s.labAttempts >= 5 },
-    ];
+    <script>
+        const TMDB_API_KEY = 'eb2ee3da5476ad4efc87554de737c77c';
+        const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+        const IMG_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+        const IMG_ORIGINAL_URL = 'https://image.tmdb.org/t/p/original';
 
-    const shopItems = [
-      ["fangling", "🧸", "Fangling", 25, 0.2], ["scout", "🐺", "Pack Scout", 90, 1], ["warden", "🛡️", "Den Warden", 240, 2.8],
-      ["ravager", "🦁", "Savage Ravager", 650, 6], ["manticore", "🦂", "Manticore", 1300, 12], ["chimera", "🐲", "Chimera", 3000, 28],
-      ["drake", "🐉", "Sky Drake", 7000, 62], ["hydra", "🐍", "Hydra", 15000, 140], ["behemoth", "🦣", "Behemoth", 35000, 300],
-      ["titan", "🗿", "Titan Beast", 80000, 640], ["voidhound", "👁️", "Void Hound", 160000, 1300], ["moonfang", "🌙", "Moon Fang", 350000, 2800],
-      ["sunrex", "☀️", "Sun Rex", 800000, 6000], ["stormwyrm", "🌩️", "Storm Wyrm", 1700000, 12800], ["riftking", "🌀", "Rift King", 3600000, 27000],
-      ["totem", "🪵", "Tribal Totem", 120, 0.6], ["altar", "🕯️", "Feeding Altar", 520, 3.5], ["shrine", "⛩️", "Beast Shrine", 2100, 14],
-      ["temple", "🏛️", "Temple of Claws", 9000, 70], ["monolith", "🗿", "Monolith", 55000, 450], ["relay", "📡", "Howl Relay", 250000, 1900],
-      ["drone", "🤖", "Hunt Drone", 900000, 7000], ["reactor", "⚛️", "Feral Reactor", 4200000, 32000],
-      ["claw1", "🦴", "Bone Grip", 75, null, 1], ["claw2", "⚔️", "Titan Claws", 500, null, 4], ["claw3", "🔥", "Inferno Talons", 4000, null, 18],
-      ["claw4", "💎", "Crystal Talons", 25000, null, 70], ["claw5", "☄️", "Comet Strike", 180000, null, 260],
-      ["luck", "🍀", "Hunter's Luck", 1100, null, 0, 0.005], ["chrono", "⏳", "Chrono Cage", 12000, null, 0, 0.01], ["oracle", "🔮", "Oracle Sigil", 85000, null, 0, 0.02],
-      ["labpack", "🧪", "Lab Pack", 64000, null, 0, 0, 0.07]
-    ].map(([id, icon, name, baseCost, bps = 0, clickBoost = 0, rareBoost = 0, labBoost = 0]) => ({ id, icon, name, baseCost, bps, clickBoost, rareBoost, labBoost }));
+        let currentMovie = null;
+        let currentServer = 'vidapi';
 
-    const updateShopItems = [
-      ["eclipseCore", "🌘", "Eclipse Core", 5500000, 55000],
-      ["apexGate", "🜂", "Apex Gate", 14000000, 140000],
-      ["voidNest", "🕳️", "Void Nest", 36000000, 360000],
-      ["novaClaw", "🌟", "Nova Claw", 8500000, null, 900],
-      ["mutaTotem", "🧬", "Mutagen Totem", 12000000, null, 0, 0.03],
-    ].map(([id, icon, name, baseCost, bps = 0, clickBoost = 0, rareBoost = 0]) => ({ id, icon, name, baseCost, bps, clickBoost, rareBoost, isUpdate: true }));
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                }, 500);
+            }, 1500);
 
-    const codeBook = {
-      WILDSTART: { clicks: 2500, msg: "+2,500 clicks" },
-      BEASTFEST: { clicks: 12000, unlockRandom: 3, msg: "+12,000 clicks and 3 random beasts" },
-      LABLUCK: { labLuck: 0.15, msg: "+15% temporary lab success this session" },
-      DAYTENHYPE: { clicks: 50000, unlockBeastId: "beast_120", msg: "Huge grant + Mythic Beast #120" },
-    };
+            loadHeroSlides();
+            loadTrendingMovies();
+            loadTopRatedMovies();
+            loadGenreMovies('action', 28);
+            loadGenreMovies('scifi', 878);
+            loadNewReleases();
+            
+            window.addEventListener('scroll', handleScroll);
+        });
 
-    const defaultState = {
-      bites: 0,
-      totalClicks: 0,
-      perClick: 1,
-      items: {},
-      unlockedBeasts: ["beast_1"],
-      activeBeastId: "beast_1",
-      achievements: [],
-      labAttempts: 0,
-      labLuckBonus: 0,
-      codeUsed: [],
-      event: null,
-      lastRareEventAt: 0,
-      logs: ["Welcome to Wild Epoch."],
-      updateReleaseAt: Date.now() + UPDATE_WINDOW_MS,
-      updateUnlocked: false,
-      ascensions: 0,
-      mutationLevel: 0,
-      bossWins: 0,
-      bossCooldownUntil: 0,
-      adminUnlocked: false,
-      adminGodClick: false,
-      adminGodBps: false,
-      adminHotkeyEnabled: true,
-      adminGuaranteedLab: false,
-    };
-
-    let state = load();
-
-    const bitesEl = document.getElementById("bites");
-    const bpsEl = document.getElementById("bps");
-    const perClickEl = document.getElementById("perClick");
-    const achievementCountEl = document.getElementById("achievementCount");
-    const beastButton = document.getElementById("beastButton");
-    const activeBeastEmojiEl = document.getElementById("activeBeastEmoji");
-    const activeBeastNameEl = document.getElementById("activeBeastName");
-    const shopEl = document.getElementById("shop");
-    const collectionEl = document.getElementById("collection");
-    const eventTextEl = document.getElementById("eventText");
-    const eventActionBtn = document.getElementById("eventActionBtn");
-    const eventTimerEl = document.getElementById("eventTimer");
-    const codeInput = document.getElementById("codeInput");
-    const codeMsg = document.getElementById("codeMsg");
-    const redeemBtn = document.getElementById("redeemBtn");
-    const labBtn = document.getElementById("labBtn");
-    const labMsg = document.getElementById("labMsg");
-    const resetBtn = document.getElementById("resetBtn");
-    const updateCountdownEl = document.getElementById("updateCountdown");
-    const claimUpdateBtn = document.getElementById("claimUpdateBtn");
-    const updatePanel = document.getElementById("updatePanel");
-    const ascendBtn = document.getElementById("ascendBtn");
-    const mutateBtn = document.getElementById("mutateBtn");
-    const bossBtn = document.getElementById("bossBtn");
-    const updateMsg = document.getElementById("updateMsg");
-    const ascensionsCountEl = document.getElementById("ascensionsCount");
-    const mutationLevelEl = document.getElementById("mutationLevel");
-    const bossWinsEl = document.getElementById("bossWins");
-    const logEl = document.getElementById("log");
-    const adminCodeOverlay = document.getElementById("adminCodeOverlay");
-    const adminCodeInput = document.getElementById("adminCodeInput");
-    const adminCodeSubmit = document.getElementById("adminCodeSubmit");
-    const adminCodeCancel = document.getElementById("adminCodeCancel");
-    const adminCodeMsg = document.getElementById("adminCodeMsg");
-    const adminPanelOverlay = document.getElementById("adminPanelOverlay");
-    const adminPanelClose = document.getElementById("adminPanelClose");
-    const adminLogEl = document.getElementById("adminLog");
-    const adminAdd1k = document.getElementById("adminAdd1k");
-    const adminAdd1m = document.getElementById("adminAdd1m");
-    const adminAdd1b = document.getElementById("adminAdd1b");
-    const adminCustomClicks = document.getElementById("adminCustomClicks");
-    const adminGiveCustom = document.getElementById("adminGiveCustom");
-    const adminUnlockAllBeasts = document.getElementById("adminUnlockAllBeasts");
-    const adminUnlockUpdate = document.getElementById("adminUnlockUpdate");
-    const adminMaxBaseShop = document.getElementById("adminMaxBaseShop");
-    const adminMaxUpdateShop = document.getElementById("adminMaxUpdateShop");
-    const adminForceEvent = document.getElementById("adminForceEvent");
-    const adminLabSuccess = document.getElementById("adminLabSuccess");
-    const adminBossWin = document.getElementById("adminBossWin");
-    const adminAchievementsAll = document.getElementById("adminAchievementsAll");
-    const adminToggleGodClick = document.getElementById("adminToggleGodClick");
-    const adminToggleGodBps = document.getElementById("adminToggleGodBps");
-    const adminTogglePanelHotkey = document.getElementById("adminTogglePanelHotkey");
-    const adminWipeCodes = document.getElementById("adminWipeCodes");
-
-    function load() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return structuredClone(defaultState);
-        const parsed = JSON.parse(raw);
-        return {
-          ...structuredClone(defaultState),
-          ...parsed,
-          items: { ...defaultState.items, ...(parsed.items || {}) },
-          logs: Array.isArray(parsed.logs) ? parsed.logs.slice(-50) : defaultState.logs,
-          updateReleaseAt: parsed.updateReleaseAt || Date.now() + UPDATE_WINDOW_MS,
-        };
-      } catch {
-        return structuredClone(defaultState);
-      }
-    }
-
-    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-    function format(n) {
-      if (n < 1000) return Number(n.toFixed(1)).toString();
-      const u = ["K", "M", "B", "T", "Qa", "Qi"];
-      let i = -1, v = n;
-      while (v >= 1000 && i < u.length - 1) { v /= 1000; i++; }
-      return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)}${u[i]}`;
-    }
-
-    function itemCount(id) { return state.items[id] || 0; }
-    function currentCost(item) { return Math.floor(item.baseCost * Math.pow(1.15, itemCount(item.id))); }
-    function allShopItems() {
-      return state.updateUnlocked ? [...shopItems, ...updateShopItems] : shopItems;
-    }
-    function totalBps() { return allShopItems().reduce((sum, i) => sum + (i.bps ? i.bps * itemCount(i.id) : 0), 0); }
-    function rareChance() {
-      return 0.004 + allShopItems().reduce((sum, i) => sum + (i.rareBoost || 0) * itemCount(i.id), 0);
-    }
-    function labChance() {
-      return 0.16 + state.labLuckBonus + shopItems.reduce((sum, i) => sum + (i.labBoost || 0) * itemCount(i.id), 0);
-    }
-
-    function pushLog(text) {
-      state.logs.push(`[${new Date().toLocaleTimeString()}] ${text}`);
-      state.logs = state.logs.slice(-40);
-    }
-
-    function pushAdminLog(text) {
-      if (!window.__adminLogs) window.__adminLogs = [];
-      window.__adminLogs.push(`[${new Date().toLocaleTimeString()}] ${text}`);
-      window.__adminLogs = window.__adminLogs.slice(-20);
-      if (adminLogEl) adminLogEl.innerHTML = window.__adminLogs.map((x) => `<div>${x}</div>`).join('');
-      pushLog(`[ADMIN] ${text}`);
-    }
-
-    function isAdminOpen() {
-      return !adminPanelOverlay.classList.contains('hidden');
-    }
-
-    function unlockBeast(id) {
-      if (!state.unlockedBeasts.includes(id)) {
-        state.unlockedBeasts.push(id);
-        pushLog(`Unlocked ${beasts.find(b => b.id === id)?.name || id}.`);
-      }
-    }
-
-    function unlockRandomBeast(preferRare = false) {
-      const locked = beasts.filter(b => !state.unlockedBeasts.includes(b.id));
-      if (!locked.length) return null;
-      let pool = locked;
-      if (preferRare) {
-        const rarePool = locked.filter(b => b.rarity !== "Common");
-        if (rarePool.length) pool = rarePool;
-      }
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      unlockBeast(pick.id);
-      return pick;
-    }
-
-    function recomputeAchievements() {
-      for (const a of achievements) {
-        if (!state.achievements.includes(a.id) && a.check(state)) {
-          state.achievements.push(a.id);
-          pushLog(`Achievement unlocked: ${a.name}`);
+        function handleScroll() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
         }
-      }
-    }
 
-    function maybeRotateActiveBeast() {
-      if (!state.unlockedBeasts.length) return;
-      if (Math.random() < 0.12) {
-        state.activeBeastId = state.unlockedBeasts[Math.floor(Math.random() * state.unlockedBeasts.length)];
-      }
-    }
+        async function loadHeroSlides() {
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+                const data = await response.json();
+                const movies = data.results.slice(0, 5);
+                
+                const slider = document.getElementById('heroSlider');
+                slider.innerHTML = '';
+                
+                movies.forEach((movie, index) => {
+                    const slide = document.createElement('div');
+                    slide.className = `hero-slide ${index === 0 ? 'active' : ''}`;
+                    const titleEscaped = movie.title.replace(/'/g, "\\'");
+                    slide.innerHTML = `
+                        <div class="hero-backdrop" style="background-image: url('${IMG_ORIGINAL_URL}${movie.backdrop_path}')"></div>
+                        <div class="hero-overlay"></div>
+                        <div class="hero-content">
+                            <h1 class="hero-title">${movie.title}</h1>
+                            <p class="hero-description">${movie.overview.substring(0, 200)}${movie.overview.length > 200 ? '...' : ''}</p>
+                            <div class="hero-buttons">
+                                <button class="btn btn-primary" onclick="playMovie(${movie.id}, '${titleEscaped}')">
+                                    <i class="fas fa-play"></i> Play
+                                </button>
+                                <button class="btn btn-secondary" onclick="addToMyList(${movie.id})">
+                                    <i class="fas fa-plus"></i> My List
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    slider.appendChild(slide);
+                });
 
-    function renderShop() {
-      shopEl.innerHTML = "";
-      for (const item of allShopItems()) {
-        const count = itemCount(item.id);
-        const cost = currentCost(item);
-        const can = state.bites >= cost;
-        const desc = item.bps ? `${item.bps}/sec each` : item.clickBoost ? `+${item.clickBoost} click power` : "Special utility";
-        const bonus = [item.rareBoost ? `+${(item.rareBoost * 100).toFixed(1)}% rare` : "", item.labBoost ? `+${(item.labBoost * 100).toFixed(1)}% lab` : ""].filter(Boolean).join(" • ");
-
-        const row = document.createElement("article");
-        row.className = "item";
-        row.innerHTML = `
-          <div>${item.icon}</div>
-          <div>
-            <div><strong>${item.name}</strong></div>
-            <div class="small">${desc} • Owned: ${count}${bonus ? ` • ${bonus}` : ""}${item.isUpdate ? " • Day-10" : ""}</div>
-          </div>
-          <button class="buy" data-id="${item.id}" ${can ? "" : "disabled"}>Buy ${format(cost)}</button>
-        `;
-        shopEl.appendChild(row);
-      }
-    }
-
-    function renderCollection() {
-      const unlocked = new Set(state.unlockedBeasts);
-      collectionEl.innerHTML = "";
-      beasts.forEach((b) => {
-        const d = document.createElement("div");
-        const has = unlocked.has(b.id);
-        d.className = `beast-chip ${has ? "" : "locked"}`;
-        d.innerHTML = `${b.icon} ${has ? b.name : "Locked Beast"}`;
-        collectionEl.appendChild(d);
-      });
-    }
-
-    function renderEvent() {
-      const e = state.event;
-      if (!e) {
-        eventTextEl.textContent = "No active event right now.";
-        eventActionBtn.disabled = true;
-        eventTimerEl.textContent = "--";
-        return;
-      }
-      const left = Math.max(0, e.endsAt - Date.now());
-      if (left <= 0) {
-        state.event = null;
-        renderEvent();
-        return;
-      }
-      eventTextEl.textContent = `${e.name}: ${e.desc}`;
-      eventTimerEl.textContent = `${Math.ceil(left / 1000)}s`;
-      eventActionBtn.disabled = false;
-      eventActionBtn.textContent = e.actionText;
-    }
-
-    function renderCountdown() {
-      const left = Math.max(0, state.updateReleaseAt - Date.now());
-      const d = Math.floor(left / 86400000);
-      const h = Math.floor((left % 86400000) / 3600000);
-      const m = Math.floor((left % 3600000) / 60000);
-      const released = left <= 0;
-      updateCountdownEl.textContent = released ? "LIVE NOW" : `${d}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
-      claimUpdateBtn.disabled = !released || state.updateUnlocked;
-      claimUpdateBtn.textContent = state.updateUnlocked ? "Update Unlocked" : "Unlock Day-10 Update";
-      updatePanel.classList.toggle("hidden", !state.updateUnlocked);
-    }
-
-    function renderCore() {
-      bitesEl.textContent = format(state.bites);
-      bpsEl.textContent = format(totalBps());
-      perClickEl.textContent = format(state.perClick);
-      achievementCountEl.textContent = state.achievements.length;
-      const active = beasts.find((b) => b.id === state.activeBeastId) || beasts[0];
-      activeBeastEmojiEl.textContent = active.icon;
-      activeBeastNameEl.textContent = active.name;
-      ascensionsCountEl.textContent = state.ascensions;
-      mutationLevelEl.textContent = state.mutationLevel;
-      bossWinsEl.textContent = state.bossWins;
-      logEl.innerHTML = state.logs.slice(-12).map((t) => `<div>${t}</div>`).join("");
-      adminToggleGodClick.textContent = `God Click: ${state.adminGodClick ? 'ON' : 'OFF'}`;
-      adminToggleGodBps.textContent = `God BPS: ${state.adminGodBps ? 'ON' : 'OFF'}`;
-      adminTogglePanelHotkey.textContent = state.adminHotkeyEnabled ? 'Hotkey Enabled' : 'Hotkey Disabled';
-      renderEvent();
-      renderCountdown();
-    }
-
-    function renderAll() {
-      renderCore();
-      renderShop();
-      renderCollection();
-    }
-
-    function gain(v) {
-      state.bites += v;
-      if (state.bites < 0) state.bites = 0;
-    }
-
-    function clickBeast(ev) {
-      const clickPower = state.adminGodClick ? state.perClick * 10 : state.perClick;
-      gain(clickPower);
-      state.totalClicks += 1;
-
-      if (Math.random() < rareChance()) {
-        const found = unlockRandomBeast(Math.random() < 0.6);
-        if (found) pushLog(`Rare discovery! ${found.name} joined your codex.`);
-      }
-
-      maybeRotateActiveBeast();
-      recomputeAchievements();
-
-      const pop = document.createElement("span");
-      pop.className = "popup";
-      pop.textContent = `+${format(clickPower)}`;
-      const rect = beastButton.getBoundingClientRect();
-      pop.style.left = `${(ev?.clientX ?? rect.left + rect.width / 2) - rect.left}px`;
-      pop.style.top = `${(ev?.clientY ?? rect.top + rect.height / 2) - rect.top}px`;
-      beastButton.appendChild(pop);
-      setTimeout(() => pop.remove(), 730);
-
-      renderCore();
-    }
-
-    beastButton.addEventListener("click", clickBeast);
-
-    shopEl.addEventListener("click", (ev) => {
-      const btn = ev.target.closest("button.buy");
-      if (!btn) return;
-      const item = allShopItems().find((s) => s.id === btn.dataset.id);
-      if (!item) return;
-      const cost = currentCost(item);
-      if (state.bites < cost) return;
-      gain(-cost);
-      state.items[item.id] = itemCount(item.id) + 1;
-      if (item.clickBoost) state.perClick += item.clickBoost;
-      recomputeAchievements();
-      renderAll();
-    });
-
-    const eventTemplates = [
-      {
-        name: "Blood Moon Hunt",
-        desc: "Tap event action for a burst and possible rare beast.",
-        duration: 25,
-        actionText: "Howl at moon",
-        apply: () => {
-          gain(500 + totalBps() * 12);
-          if (Math.random() < 0.5) unlockRandomBeast(true);
-          pushLog("Blood Moon rewards claimed.");
+                let currentSlide = 0;
+                setInterval(() => {
+                    const slides = document.querySelectorAll('.hero-slide');
+                    slides[currentSlide].classList.remove('active');
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    slides[currentSlide].classList.add('active');
+                }, 5000);
+            } catch (error) {
+                console.error('Error loading hero slides:', error);
+            }
         }
-      },
-      {
-        name: "Meteor Stampede",
-        desc: "Catch meteors to gain chunks of clicks.",
-        duration: 20,
-        actionText: "Catch meteor",
-        apply: () => {
-          gain(1200 + Math.random() * 4000);
-          pushLog("Meteor fragments converted into clicks.");
+
+        async function loadTrendingMovies() {
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}`);
+                const data = await response.json();
+                renderCarousel('trendingCarousel', data.results.slice(0, 10));
+            } catch (error) {
+                console.error('Error loading trending movies:', error);
+            }
         }
-      },
-      {
-        name: "Ancient Roar Echo",
-        desc: "Channel roar for temporary click power.",
-        duration: 18,
-        actionText: "Channel roar",
-        apply: () => {
-          state.perClick += 5;
-          pushLog("Roar resonance: +5 click power.");
+
+        async function loadTopRatedMovies() {
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+                const data = await response.json();
+                renderCarousel('topratedCarousel', data.results.slice(0, 10));
+            } catch (error) {
+                console.error('Error loading top rated movies:', error);
+            }
         }
-      }
-    ];
 
-    function maybeSpawnEvent() {
-      if (state.event) return;
-      const gap = Date.now() - (state.lastRareEventAt || 0);
-      const baseReady = gap > 45000;
-      const luck = Math.min(0.35, 0.05 + itemCount("chrono") * 0.01);
-      if (baseReady && Math.random() < luck) {
-        const t = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
-        state.event = {
-          name: t.name,
-          desc: t.desc,
-          actionText: t.actionText,
-          endsAt: Date.now() + t.duration * 1000,
-          applyName: t.name,
-        };
-        state.lastRareEventAt = Date.now();
-        pushLog(`Rare timed event started: ${t.name}`);
-      }
-    }
-
-    eventActionBtn.addEventListener("click", () => {
-      if (!state.event) return;
-      const t = eventTemplates.find((e) => e.name === state.event.applyName);
-      if (!t) return;
-      t.apply();
-      state.event = null;
-      recomputeAchievements();
-      renderAll();
-    });
-
-    redeemBtn.addEventListener("click", () => {
-      const code = codeInput.value.trim().toUpperCase();
-      if (!code) return;
-      if (state.codeUsed.includes(code)) {
-        codeMsg.textContent = "Code already used.";
-        return;
-      }
-      const found = codeBook[code];
-      if (!found) {
-        codeMsg.textContent = "Invalid code.";
-        return;
-      }
-      if (found.clicks) gain(found.clicks);
-      if (found.unlockRandom) for (let i = 0; i < found.unlockRandom; i++) unlockRandomBeast(true);
-      if (found.unlockBeastId) unlockBeast(found.unlockBeastId);
-      if (found.labLuck) state.labLuckBonus += found.labLuck;
-      state.codeUsed.push(code);
-      codeMsg.textContent = `Redeemed: ${found.msg}`;
-      pushLog(`Code redeemed: ${code}`);
-      recomputeAchievements();
-      renderAll();
-    });
-
-    labBtn.addEventListener("click", () => {
-      const cost = 2500;
-      if (state.bites < cost) {
-        labMsg.textContent = "Not enough clicks for experiment.";
-        return;
-      }
-      gain(-cost);
-      state.labAttempts += 1;
-      const roll = state.adminGuaranteedLab ? 0 : Math.random();
-      const chance = Math.min(0.9, labChance());
-      if (roll < chance * 0.45) {
-        const found = unlockRandomBeast(true);
-        labMsg.textContent = found ? `Success! New beast: ${found.name}` : "Success! But codex is complete.";
-      } else if (roll < chance) {
-        const ach = achievements.find((a) => !state.achievements.includes(a.id));
-        if (ach) {
-          state.achievements.push(ach.id);
-          labMsg.textContent = `Breakthrough! Achievement: ${ach.name}`;
-          pushLog(`Lab breakthrough achievement: ${ach.name}`);
-        } else {
-          state.perClick += 2;
-          labMsg.textContent = "Experiment boosted click power +2.";
+        async function loadGenreMovies(carouselId, genreId) {
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc`);
+                const data = await response.json();
+                renderCarousel(`${carouselId}Carousel`, data.results.slice(0, 10));
+            } catch (error) {
+                console.error(`Error loading ${carouselId} movies:`, error);
+            }
         }
-      } else {
-        labMsg.textContent = "Experiment failed. Data collected, no reward.";
-      }
-      recomputeAchievements();
-      renderAll();
-    });
 
-
-    claimUpdateBtn.addEventListener("click", () => {
-      if (Date.now() < state.updateReleaseAt || state.updateUnlocked) return;
-      state.updateUnlocked = true;
-      unlockBeast("beast_120");
-      pushLog("Day-10 Update unlocked: Eclipse Frontier is now live.");
-      updateMsg.textContent = "Eclipse Frontier unlocked! Buy new update-tier upgrades and use new systems.";
-      renderAll();
-    });
-
-    ascendBtn.addEventListener("click", () => {
-      if (!state.updateUnlocked) return;
-      const cost = 1000000;
-      if (state.bites < cost) {
-        updateMsg.textContent = "Need 1M clicks to Ascend.";
-        return;
-      }
-      gain(-cost);
-      state.ascensions += 1;
-      state.perClick += 25 + state.ascensions * 3;
-      unlockRandomBeast(true);
-      pushLog(`Ascension complete. Total ascensions: ${state.ascensions}.`);
-      updateMsg.textContent = "Ascension successful: permanent click boost gained.";
-      renderAll();
-    });
-
-    mutateBtn.addEventListener("click", () => {
-      if (!state.updateUnlocked) return;
-      const cost = 250000 + state.mutationLevel * 180000;
-      if (state.bites < cost) {
-        updateMsg.textContent = `Need ${format(cost)} clicks for next mutation.`;
-        return;
-      }
-      gain(-cost);
-      state.mutationLevel += 1;
-      state.perClick += 8;
-      pushLog(`Mutation research level ${state.mutationLevel} completed.`);
-      updateMsg.textContent = `Mutation level ${state.mutationLevel} unlocked (+8 click power).`;
-      renderAll();
-    });
-
-    bossBtn.addEventListener("click", () => {
-      if (!state.updateUnlocked) return;
-      if (Date.now() < state.bossCooldownUntil) {
-        const wait = Math.ceil((state.bossCooldownUntil - Date.now()) / 1000);
-        updateMsg.textContent = `Alpha boss recovering. Wait ${wait}s.`;
-        return;
-      }
-      const power = state.perClick + totalBps() * 0.6 + state.ascensions * 120;
-      const bossHP = 1500 + state.bossWins * 650;
-      state.bossCooldownUntil = Date.now() + 45000;
-      if (power >= bossHP || Math.random() < 0.2 + state.mutationLevel * 0.01) {
-        state.bossWins += 1;
-        const reward = bossHP * 110;
-        gain(reward);
-        unlockRandomBeast(true);
-        pushLog(`Alpha boss defeated! Rewarded ${format(reward)} clicks.`);
-        updateMsg.textContent = `Boss down! +${format(reward)} clicks and a rare beast chance.`;
-      } else {
-        gain(Math.max(1200, bossHP * 8));
-        pushLog("Boss hunt failed, but fallback loot recovered.");
-        updateMsg.textContent = "Boss escaped. You recovered consolation loot.";
-      }
-      renderAll();
-    });
-
-
-
-    document.addEventListener("keydown", (ev) => {
-      if (!state.adminHotkeyEnabled) return;
-      if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === "a") {
-        ev.preventDefault();
-        adminCodeOverlay.classList.remove("hidden");
-        adminCodeInput.focus();
-      }
-    });
-
-    adminCodeCancel.addEventListener("click", () => {
-      adminCodeOverlay.classList.add("hidden");
-    });
-
-    adminCodeSubmit.addEventListener("click", () => {
-      const code = adminCodeInput.value.trim();
-      if (code !== ADMIN_CODE) {
-        adminCodeMsg.textContent = "Invalid admin code.";
-        return;
-      }
-      state.adminUnlocked = true;
-      adminCodeOverlay.classList.add("hidden");
-      adminPanelOverlay.classList.remove("hidden");
-      adminCodeMsg.textContent = "Access granted.";
-      pushAdminLog("Admin panel unlocked.");
-      renderCore();
-    });
-
-    adminPanelClose.addEventListener("click", () => adminPanelOverlay.classList.add("hidden"));
-
-    function requireAdmin(fn) {
-      return () => {
-        if (!state.adminUnlocked) {
-          pushAdminLog("Blocked admin action (not unlocked).");
-          return;
+        async function loadNewReleases() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&primary_release_date.gte=${today}&sort_by=popularity.desc`);
+                const data = await response.json();
+                renderCarousel('newreleaseCarousel', data.results.slice(0, 10));
+            } catch (error) {
+                console.error('Error loading new releases:', error);
+            }
         }
-        fn();
-        renderAll();
-      };
-    }
 
-    adminAdd1k.addEventListener("click", requireAdmin(() => { gain(1000); pushAdminLog("Granted 1K clicks."); }));
-    adminAdd1m.addEventListener("click", requireAdmin(() => { gain(1_000_000); pushAdminLog("Granted 1M clicks."); }));
-    adminAdd1b.addEventListener("click", requireAdmin(() => { gain(1_000_000_000); pushAdminLog("Granted 1B clicks."); }));
-    adminGiveCustom.addEventListener("click", requireAdmin(() => {
-      const amount = Number(adminCustomClicks.value || 0);
-      if (!Number.isFinite(amount) || amount <= 0) { pushAdminLog("Invalid custom amount."); return; }
-      gain(amount);
-      pushAdminLog(`Granted custom clicks: ${format(amount)}.`);
-    }));
+        function renderCarousel(carouselId, movies) {
+            const carousel = document.getElementById(carouselId);
+            carousel.innerHTML = '';
+            
+            movies.forEach(movie => {
+                if (movie.poster_path) {
+                    const card = document.createElement('div');
+                    card.className = 'movie-card';
+                    const titleEscaped = movie.title.replace(/'/g, "\\'");
+                    card.onclick = () => playMovie(movie.id, titleEscaped);
+                    card.innerHTML = `
+                        <img src="${IMG_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="movie-poster">
+                        <button class="play-btn"><i class="fas fa-play"></i></button>
+                        <div class="movie-overlay">
+                            <h3 class="movie-title">${movie.title}</h3>
+                            <div class="movie-info">
+                                <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
+                                <div class="movie-rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    carousel.appendChild(card);
+                }
+            });
+        }
 
-    adminUnlockAllBeasts.addEventListener("click", requireAdmin(() => { beasts.forEach((b) => unlockBeast(b.id)); pushAdminLog("Unlocked all beasts."); }));
-    adminUnlockUpdate.addEventListener("click", requireAdmin(() => { state.updateUnlocked = true; state.updateReleaseAt = Date.now() - 1000; pushAdminLog("Force-unlocked Day-10 update."); }));
-    adminMaxBaseShop.addEventListener("click", requireAdmin(() => {
-      for (const item of shopItems) {
-        const before = itemCount(item.id);
-        const target = Math.max(before, 25);
-        state.items[item.id] = target;
-        if (item.clickBoost) state.perClick += item.clickBoost * (target - before);
-      }
-      pushAdminLog("Set base shop ownership to at least 25 each.");
-    }));
-    adminMaxUpdateShop.addEventListener("click", requireAdmin(() => {
-      state.updateUnlocked = true;
-      for (const item of updateShopItems) {
-        const target = Math.max(itemCount(item.id), 10);
-        const before = itemCount(item.id);
-        state.items[item.id] = target;
-        if (item.clickBoost) state.perClick += item.clickBoost * (target - before);
-      }
-      pushAdminLog("Set update shop ownership to at least 10 each.");
-    }));
+        function scrollCarousel(carouselId, direction) {
+            const carousel = document.getElementById(`${carouselId}Carousel`);
+            const scrollAmount = 300;
+            carousel.scrollBy({
+                left: direction * scrollAmount,
+                behavior: 'smooth'
+            });
+        }
 
-    adminForceEvent.addEventListener("click", requireAdmin(() => {
-      const t = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
-      state.event = { name: t.name, desc: t.desc, actionText: t.actionText, endsAt: Date.now() + t.duration * 1000, applyName: t.name };
-      pushAdminLog(`Forced event: ${t.name}.`);
-    }));
-    adminLabSuccess.addEventListener("click", requireAdmin(() => { state.adminGuaranteedLab = !state.adminGuaranteedLab; pushAdminLog(`Guaranteed lab success: ${state.adminGuaranteedLab ? 'ON' : 'OFF'}.`); }));
-    adminBossWin.addEventListener("click", requireAdmin(() => {
-      state.updateUnlocked = true;
-      state.bossCooldownUntil = 0;
-      state.bossWins += 1;
-      const reward = (1500 + state.bossWins * 650) * 120;
-      gain(reward);
-      unlockRandomBeast(true);
-      pushAdminLog(`Forced boss win and granted ${format(reward)} clicks.`);
-    }));
-    adminAchievementsAll.addEventListener("click", requireAdmin(() => {
-      for (const a of achievements) if (!state.achievements.includes(a.id)) state.achievements.push(a.id);
-      pushAdminLog("Unlocked all achievements.");
-    }));
+        function playMovie(movieId, title) {
+            currentMovie = { id: movieId, title: title };
+            const modal = document.getElementById('videoModal');
+            const frame = document.getElementById('videoFrame');
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            updateVideoSource();
+            document.getElementById('serverSelector').classList.add('active');
+        }
 
-    adminToggleGodClick.addEventListener("click", requireAdmin(() => { state.adminGodClick = !state.adminGodClick; pushAdminLog(`God Click ${state.adminGodClick ? 'enabled' : 'disabled'}.`); }));
-    adminToggleGodBps.addEventListener("click", requireAdmin(() => { state.adminGodBps = !state.adminGodBps; pushAdminLog(`God BPS ${state.adminGodBps ? 'enabled' : 'disabled'}.`); }));
-    adminTogglePanelHotkey.addEventListener("click", requireAdmin(() => { state.adminHotkeyEnabled = !state.adminHotkeyEnabled; pushAdminLog(`Admin hotkey ${state.adminHotkeyEnabled ? 'enabled' : 'disabled'}.`); }));
-    adminWipeCodes.addEventListener("click", requireAdmin(() => { state.codeUsed = []; pushAdminLog("Cleared redeemed code history."); }));
+        function updateVideoSource() {
+            if (!currentMovie) return;
+            
+            const frame = document.getElementById('videoFrame');
+            let embedUrl = '';
+            
+            switch(currentServer) {
+                case 'vidapi':
+                    embedUrl = `https://vidapi.xyz/embed/movie/${currentMovie.id}`;
+                    break;
+                case 'fmovies':
+                    embedUrl = `https://embedsu.ru/embed/movie/${currentMovie.id}`;
+                    break;
+                case 'embedsu':
+                    embedUrl = `https://embedsu.ru/embed/movie/${currentMovie.id}`;
+                    break;
+                default:
+                    embedUrl = `https://vidapi.xyz/embed/movie/${currentMovie.id}`;
+            }
+            
+            frame.src = embedUrl;
+        }
 
-    resetBtn.addEventListener("click", () => {
-      if (!confirm("Reset all progress?")) return;
-      state = structuredClone(defaultState);
-      save();
-      renderAll();
-    });
+        function changeServer(server) {
+            currentServer = server;
+            
+            document.querySelectorAll('.server-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updateVideoSource();
+        }
 
-    setInterval(() => {
-      gain(state.adminGodBps ? totalBps() * 10 : totalBps());
-      maybeSpawnEvent();
-      recomputeAchievements();
-      renderCore();
-    }, 1000);
+        function closeVideoModal() {
+            const modal = document.getElementById('videoModal');
+            const frame = document.getElementById('videoFrame');
+            
+            modal.classList.remove('active');
+            frame.src = '';
+            document.body.style.overflow = 'auto';
+            document.getElementById('serverSelector').classList.remove('active');
+            currentMovie = null;
+        }
 
-    setInterval(save, 1000);
+        function toggleSearch() {
+            const modal = document.getElementById('searchModal');
+            const input = document.getElementById('searchInput');
+            
+            modal.classList.toggle('active');
+            
+            if (modal.classList.contains('active')) {
+                input.focus();
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+                input.value = '';
+                document.getElementById('searchResults').innerHTML = '';
+            }
+        }
 
-    renderAll();
-  </script>
+        async function searchMovies() {
+            const query = document.getElementById('searchInput').value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (query.length < 2) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`);
+                const data = await response.json();
+                
+                resultsContainer.innerHTML = '';
+                
+                if (data.results.length === 0) {
+                    resultsContainer.innerHTML = '<p style="color: var(--text-secondary); text-align: center; grid-column: 1/-1;">No results found</p>';
+                    return;
+                }
+                
+                data.results.forEach(movie => {
+                    if (movie.poster_path) {
+                        const resultCard = document.createElement('div');
+                        resultCard.className = 'movie-card';
+                        const titleEscaped = movie.title.replace(/'/g, "\\'");
+                        resultCard.onclick = () => {
+                            toggleSearch();
+                            playMovie(movie.id, titleEscaped);
+                        };
+                        resultCard.innerHTML = `
+                            <img src="${IMG_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="movie-poster" style="height: 225px;">
+                            <div class="movie-overlay">
+                                <h3 class="movie-title">${movie.title}</h3>
+                                <div class="movie-info">
+                                    <span>${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</span>
+                                    <div class="movie-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span>${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        resultsContainer.appendChild(resultCard);
+                    }
+                });
+            } catch (error) {
+                console.error('Error searching movies:', error);
+            }
+        }
+
+        function addToMyList(movieId) {
+            alert('Added to My List! (This is a demo feature)');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeVideoModal();
+                const searchModal = document.getElementById('searchModal');
+                if (searchModal.classList.contains('active')) {
+                    toggleSearch();
+                }
+            }
+        });
+
+        document.getElementById('videoModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('videoModal')) {
+                closeVideoModal();
+            }
+        });
+
+        document.getElementById('searchModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('searchModal')) {
+                toggleSearch();
+            }
+        });
+    </script>
 </body>
 </html>
